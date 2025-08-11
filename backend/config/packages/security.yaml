@@ -30,11 +30,11 @@ security:
             pattern: ^/api/auth/register
             security: false
 
-#        api:
-#            provider: app_user_provider
-#            pattern: ^/api
-#            stateless: true
-#            jwt: ~
+        api:
+            provider: app_user_provider
+            pattern: ^/api
+            stateless: true
+            jwt: ~
 
         main:
             lazy: true
