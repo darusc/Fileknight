@@ -1,0 +1,22 @@
+{
+    auto_https off
+}
+
+:80 {
+    root * /srv/app/public
+    encode zstd gzip
+
+    # API -> Symfony (PHP-FPM)
+    @api path /api/*
+    handle @api {
+        # Let Symfony's front controller handle API routes
+        rewrite * /index.php
+        php_fastcgi php:9000
+    }
+
+    # Static assets + React SPA fallback
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+}

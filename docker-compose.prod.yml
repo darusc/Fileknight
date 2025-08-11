@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: php-fpm
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    volumes:
+      - ./backend:/srv/app
+    environment:
+      APP_ENV: prod
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run build && cp -r dist/* /srv/app/public"
+    volumes:
+      - ./frontend:/app
+      - ./backend/public:/srv/app/public
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/caddy/Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/public:/srv/app/public
+      - ./docker/caddy/Caddyfile.prod:/etc/caddy/Caddyfile
+    depends_on:
+      - php

@@ -1,0 +1,15 @@
+{
+    auto_https off
+}
+
+:80 {
+    root * /srv/app/public
+    
+    # API requests -> Symfony (PHP-FPM)
+    @api path /api/*
+    php_fastcgi @api php:9000
+
+    # All other requests -> React's Vite dev server
+    @frontend not path /api/*
+    reverse_proxy @frontend frontend:5173
+}
