@@ -11,6 +11,7 @@ services:
         GID: ${GID:-1000}
     volumes:
       - ./backend:/srv/app
+      - ./backend/storage:/srv/storage
     environment:
       APP_ENV: dev
 
@@ -26,6 +27,17 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - '8080:80'
+    depends_on:
+      - db
 
   caddy:
     build:

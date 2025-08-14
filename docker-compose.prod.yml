@@ -11,6 +11,7 @@ services:
         GID: ${GID:-1000}
     volumes:
       - ./backend:/srv/app
+      - ./backend/storage:/srv/storage
     environment:
       APP_ENV: prod
 
