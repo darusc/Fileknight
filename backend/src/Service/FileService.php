@@ -54,7 +54,7 @@ class FileService
             $path = $this->getRootDirectoryPath($user);
             try {
                 // Create the physical directory
-                $this->filesystem->mkdir($path, 0666);
+                $this->filesystem->mkdir($path, 0775);
 
                 // Create the database entry mapping the physical directory
                 $rootDirectory = new Directory();
@@ -86,7 +86,7 @@ class FileService
     public function getRootFromDirectory(Directory $directory): Directory
     {
         $current = $directory;
-        while($current->getParent() !== null) {
+        while ($current->getParent() !== null) {
             $current = $current->getParent();
         }
         return $current;
@@ -122,21 +122,31 @@ class FileService
 
     /**
      * Upload a file
+     * @param User $user
      * @param Directory $directory The directory where the file should be uploaded to
      * @param UploadedFile $uploadedFile The file to be uploaded
      * @return void
      */
-//    public function uploadFile(Directory $directory, UploadedFile $uploadedFile): void
-//    {
-//        $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
-//
-//        $file = new File();
-//        $file->setName($originalFilename);
-//        $file->setDirectory($directory);
-//
-//
-//
-//        $this->entityManager->persist($file);
-//        $this->entityManager->flush();
-//    }
+    public function uploadFile(User $user, Directory $directory, UploadedFile $uploadedFile): void
+    {
+        $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+
+        // If there are other files with same name add a count
+        // to its name like example (2).txt if example.txt already exists
+        $index = $this->fileRepository->findNextFilenameIndex($directory, $originalFilename);
+        if ($index++ > 0) {
+            $originalFilename .= " ($index)";
+        }
+
+        $file = new File();
+        $file->setName($originalFilename);
+        $file->setDirectory($directory);
+        $file->setType($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
+        $file->setSize($uploadedFile->getSize());
+
+        $this->entityManager->persist($file);
+        $this->entityManager->flush();
+
+        $uploadedFile->move($this->getRootDirectoryPath($user), $file->getId());
+    }
 }
