@@ -26,15 +26,15 @@ class AuthController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        $email = $data['email'] ?? null;
+        $username = $data['username'] ?? null;
         $password = $data['password'] ?? null;
 
-        if ($email === null || $password === null) {
-            return new JsonResponse(['error' => 'Email and password required.'], 400);
+        if ($username === null || $password === null) {
+            return new JsonResponse(['error' => 'Username and password required.'], 400);
         }
 
         try {
-            $this->userService->register($email, $password);
+            $this->userService->register($username, $password);
 
             return new JsonResponse(['success' => 'User successfully registered.'], 201);
         } catch (Exception $e) {
@@ -45,12 +45,12 @@ class AuthController extends AbstractController
     #[Route(path: '/delete', name: 'auth.delete', methods: ['DELETE'])]
     public function delete(Request $request): JsonResponse
     {
-        $email = json_decode($request->getContent(), true)['email'] ?? null;
-        if ($email === null) {
-            return new JsonResponse(['error' => 'Email is required.'], 400);
+        $username = json_decode($request->getContent(), true)['username'] ?? null;
+        if ($username === null) {
+            return new JsonResponse(['error' => 'Username is required.'], 400);
         }
 
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
         $this->userService->delete($user);
 
         return new JsonResponse(['success' => 'User successfully deleted.'], 201);
