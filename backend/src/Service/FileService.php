@@ -3,13 +3,18 @@
 namespace Fileknight\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Fileknight\DTO\DirectoryContentDTO;
+use Fileknight\DTO\DirectoryDTO;
+use Fileknight\DTO\FileDTO;
 use Fileknight\Entity\Directory;
+use Fileknight\Entity\File;
 use Fileknight\Entity\User;
 use Fileknight\Exception\UserDirCreationException;
-use Fileknight\Repository\UserRepository;
+use Fileknight\Repository\DirectoryRepository;
+use Fileknight\Repository\FileRepository;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class FileService
@@ -19,6 +24,8 @@ class FileService
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly DirectoryRepository    $directoryRepository,
+        private readonly FileRepository         $fileRepository,
     )
     {
         $this->basepath = $_ENV['USER_STORAGE_PATH'];
@@ -43,7 +50,7 @@ class FileService
      */
     public function createRootDirectory(User $user): void
     {
-        if(!$this->rootDirectoryExists($user)) {
+        if (!$this->rootDirectoryExists($user)) {
             $path = $this->getRootDirectoryPath($user);
             try {
                 // Create the physical directory
@@ -65,9 +72,9 @@ class FileService
 
     public function deleteRootDirectory(User $user): void
     {
-        if($this->rootDirectoryExists($user)) {
+        if ($this->rootDirectoryExists($user)) {
             // Remove directory database mapping
-            $directory = $this->entityManager->getRepository(Directory::class)->findOneBy(['owner' => $user]);
+            $directory = $this->directoryRepository->findOneBy(['owner' => $user]);
             $this->entityManager->remove($directory);
             $this->entityManager->flush();
 
@@ -76,8 +83,60 @@ class FileService
         }
     }
 
-    public function uploadFile(UserInterface $user, File $file): void
+    public function getRootFromDirectory(Directory $directory): Directory
     {
-
+        $current = $directory;
+        while($current->getParent() !== null) {
+            $current = $current->getParent();
+        }
+        return $current;
     }
+
+    /**
+     * Get all files and directories in the given directory
+     */
+    public function getDirectoryContent(Directory $directory): DirectoryContentDTO
+    {
+        $files = [];
+        /** @var File $file */
+        foreach ($directory->getFiles() as $file) {
+            $files[] = new FileDTO(
+                id: $file->getId(),
+                name: $file->getName(),
+                size: $file->getSize(),
+                type: $file->getType(),
+            );
+        }
+
+        $directories = [];
+        /** @var Directory $dir */
+        foreach ($directory->getChildren() as $dir) {
+            $directories[] = new DirectoryDTO(
+                id: $dir->getId(),
+                name: $dir->getName(),
+            );
+        }
+
+        return new DirectoryContentDTO($files, $directories);
+    }
+
+    /**
+     * Upload a file
+     * @param Directory $directory The directory where the file should be uploaded to
+     * @param UploadedFile $uploadedFile The file to be uploaded
+     * @return void
+     */
+//    public function uploadFile(Directory $directory, UploadedFile $uploadedFile): void
+//    {
+//        $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+//
+//        $file = new File();
+//        $file->setName($originalFilename);
+//        $file->setDirectory($directory);
+//
+//
+//
+//        $this->entityManager->persist($file);
+//        $this->entityManager->flush();
+//    }
 }

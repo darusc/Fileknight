@@ -11,6 +11,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.4",
         "doctrine/orm": "^2.20.6",
         "lexik/jwt-authentication-bundle": "^3.1.1",
+        "ramsey/uuid": "^4.9",
         "symfony/console": "7.3.*",
         "symfony/dotenv": "7.3.*",
         "symfony/expression-language": "7.3.*",

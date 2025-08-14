@@ -6,14 +6,15 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Fileknight\Repository\DirectoryRepository;
+use Ramsey\Uuid\Uuid;
 
 #[ORM\Entity(repositoryClass: DirectoryRepository::class)]
 class Directory
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    private int $id;
+    #[ORM\GeneratedValue(strategy: 'NONE')]
+    #[ORM\Column(type: 'string', length: 32, unique: true)]
+    private string $id;
 
     #[ORM\Column(type: 'string', length: 255)]
     private string $name;
@@ -32,6 +33,7 @@ class Directory
 
     public function __construct()
     {
+        $this->id = str_replace('-', '', Uuid::uuid4()->toString());
         $this->files = new ArrayCollection();
         $this->children = new ArrayCollection();
     }
@@ -41,7 +43,7 @@ class Directory
         return $this->parent === null;
     }
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }
