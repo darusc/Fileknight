@@ -3,6 +3,9 @@
 namespace Fileknight\Controller;
 
 use Exception;
+use Fileknight\ApiResponse;
+use Fileknight\DTO\DirectoryDTO;
+use Fileknight\DTO\FileDTO;
 use Fileknight\Entity\Directory;
 use Fileknight\Entity\User;
 use Fileknight\Exception\DirectoryAccessDeniedException;
@@ -40,11 +43,11 @@ class FileController extends AbstractController
             $directory = $this->resolveRequestDirectory($request);
             $content = $this->fileService->getDirectoryContent($directory);
 
-            return new JsonResponse($content->toArray(), Response::HTTP_OK);
+            return ApiResponse::success($content->toArray());
         } catch (DirectoryAccessDeniedException $exception) {
-            return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
         } catch (Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -69,11 +72,14 @@ class FileController extends AbstractController
             $directory = $this->resolveRequestDirectory($request);
             $this->fileService->uploadFile($user, $directory, $uploadedFile);
 
-            return new JsonResponse(['success' => 'File uploaded successfully.'], Response::HTTP_OK);
+            return ApiResponse::success(
+                FileDTO::fromEntity($file)->toArray(),
+                'File uploaded successfully.',
+            );
         } catch (DirectoryAccessDeniedException $exception) {
-            return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
         } catch (Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -91,13 +97,16 @@ class FileController extends AbstractController
 
         try {
             $directory = $this->resolveRequestDirectory($request);
-            $this->fileService->createDirectory($directory, $name);
+            $created = $this->fileService->createDirectory($directory, $name);
 
-            return new JsonResponse(['success' => "Directory $name created successfully."], Response::HTTP_OK);
+            return ApiResponse::success(
+                DirectoryDTO::fromEntity($created)->toArray(),
+                'Directory created successfully.',
+            );
         } catch (DirectoryAccessDeniedException $exception) {
-            return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
         } catch (Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

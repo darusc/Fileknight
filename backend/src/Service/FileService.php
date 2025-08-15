@@ -125,9 +125,9 @@ class FileService
      * @param User $user
      * @param Directory $directory The directory where the file should be uploaded to
      * @param UploadedFile $uploadedFile The file to be uploaded
-     * @return void
+     * @return File The uploaded file
      */
-    public function uploadFile(User $user, Directory $directory, UploadedFile $uploadedFile): void
+    public function uploadFile(User $user, Directory $directory, UploadedFile $uploadedFile): File
     {
         $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
 
@@ -141,6 +141,8 @@ class FileService
         $this->entityManager->flush();
 
         $uploadedFile->move($this->getRootDirectoryPath($user), $file->getId());
+
+        return $file;
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Fileknight\DTO;
 
+use Fileknight\Entity\File;
 use JsonSerializable;
 
 readonly class FileDTO implements JsonSerializable
@@ -13,6 +14,16 @@ readonly class FileDTO implements JsonSerializable
         public string $type,
     )
     {
+    }
+
+    public static function fromEntity(File $file): self
+    {
+        return new self(
+            $file->getId(),
+            $file->getName(),
+            $file->getSize(),
+            $file->getType(),
+        );
     }
 
     public function jsonSerialize(): array

@@ -2,6 +2,7 @@
 
 namespace Fileknight\DTO;
 
+use Fileknight\Entity\Directory;
 use JsonSerializable;
 
 readonly class DirectoryDTO implements JsonSerializable
@@ -11,6 +12,14 @@ readonly class DirectoryDTO implements JsonSerializable
         public string $name,
     )
     {
+    }
+
+    public static function fromEntity(Directory $directory): self
+    {
+        return new self(
+            $directory->getId(),
+            $directory->getName(),
+        );
     }
 
     public function jsonSerialize(): array
