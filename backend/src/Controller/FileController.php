@@ -26,44 +26,49 @@ class FileController extends AbstractController
     {
     }
 
+    /**
+     * List the content of the directory given by the folderId query param.
+     * If folderId is not given return the content of root directory.
+     */
     #[Route(path: '', name: 'api.files', methods: ['GET'])]
-    public function getRootContent(): JsonResponse
+    public function listContent(Request $request): JsonResponse
     {
+        $folderId = $request->query->get('folderId');
+
         try {
             /** @var User $user */
             $user = $this->getUser();
 
-            $root = $this->directoryRepository->findRootByUser($user);
-            $content = $this->fileService->getDirectoryContent($root);
+            // If folderId is not given list the content of the root directory
+            // otherwise list that content of the directory with that id
+            if($folderId === null) {
+                $directory = $this->directoryRepository->findRootByUser($user);
+            } else {
+                $directory = $this->directoryRepository->findOneBy(['id' => $folderId]);
 
-            return new JsonResponse($content->toArray(), Response::HTTP_OK);
-        } catch (Exception $exception) {
-            return new JsonResponse($exception->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
+                if ($directory === null) {
+                    throw new DirectoryNotFoundException($folderId);
+                }
 
-    #[Route(path: '/folders/{folderId}', name: 'api.files.folder', methods: ['GET'])]
-    public function getDirectoryContent(string $folderId): JsonResponse
-    {
-        try {
-            /** @var User $user */
-            $user = $this->getUser();
-
-            $directory = $this->directoryRepository->findOneBy(['id' => $folderId]);
-            $root = $this->fileService->getRootFromDirectory($directory);
-
-            if ($root->getOwner() !== $user) {
-                return new JsonResponse(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+                // Get the directory's root to check owner
+                $root = $this->fileService->getRootFromDirectory($directory);
+                if ($root->getOwner() !== $user) {
+                    return new JsonResponse(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+                }
             }
 
             $content = $this->fileService->getDirectoryContent($directory);
 
             return new JsonResponse($content->toArray(), Response::HTTP_OK);
         } catch (Exception $exception) {
-            return new JsonResponse($exception->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
+    /**
+     * Upload file to directory given by the folderId query param.
+     * If folderId is not given uploads to root directory.
+     */
     #[Route(path: '', name: 'api.files.upload', methods: ['POST'])]
     public function upload(Request $request): JsonResponse
     {
@@ -74,14 +79,14 @@ class FileController extends AbstractController
             return new JsonResponse(['error' => 'No file uploaded'], Response::HTTP_BAD_REQUEST);
         }
 
-        $folderId = $request->request->get('folderId');
+        $folderId = $request->query->get('folderId');
 
         try {
             /** @var User $user */
             $user = $this->getUser();
 
-            // If folderId is specified in the request body upload the file in that folder
-            // otherwise upload it in the root folder
+            // If folderId is not given upload file in the root directory
+            // otherwise upload in the directory with that id
             if ($folderId === null) {
                 $directory = $this->directoryRepository->findRootByUser($user);
             } else {
@@ -94,6 +99,43 @@ class FileController extends AbstractController
             $this->fileService->uploadFile($user, $directory, $uploadedFile);
 
             return new JsonResponse(['success' => 'File uploaded successfully.'], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Creates a new directory inside the directory given by folderId query param.
+     * If folderId is not given the new directory is created inside root.
+     */
+    #[Route(path: '/create', name: 'api.files.create', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
+    {
+        $folderId = $request->query->get('folderId');
+
+        $name = $request->request->get('name');
+        if($name === null) {
+            return new JsonResponse(['error' => 'Folder name must be specified'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            /** @var User $user */
+            $user = $this->getUser();
+
+            // If folderId is specified, create the new folder in that folder
+            // otherwise create it in the root folder
+            if ($folderId === null) {
+                $directory = $this->directoryRepository->findRootByUser($user);
+            } else {
+                $directory = $this->directoryRepository->findOneBy(['id' => $folderId]);
+                if ($directory === null) {
+                    throw new DirectoryNotFoundException($folderId);
+                }
+            }
+
+            $this->fileService->createDirectory($directory, $name);
+
+            return new JsonResponse(['success' => "Directory $name created successfully."], Response::HTTP_OK);
         } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

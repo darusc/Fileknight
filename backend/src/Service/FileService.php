@@ -131,13 +131,6 @@ class FileService
     {
         $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
 
-        // If there are other files with same name add a count
-        // to its name like example (2).txt if example.txt already exists
-        $index = $this->fileRepository->findNextFilenameIndex($directory, $originalFilename);
-        if ($index++ > 0) {
-            $originalFilename .= " ($index)";
-        }
-
         $file = new File();
         $file->setName($originalFilename);
         $file->setDirectory($directory);
@@ -148,5 +141,24 @@ class FileService
         $this->entityManager->flush();
 
         $uploadedFile->move($this->getRootDirectoryPath($user), $file->getId());
+    }
+
+    /**
+     * Create a new directory. Files are stored in a flat system, directory structure
+     * is created only through database records.
+     * @param Directory $parentDirectory
+     * @param string $name The name of the new directory to be created
+     * @return Directory The created directory
+     */
+    public function createDirectory(Directory $parentDirectory, string $name): Directory
+    {
+        $directory = new Directory();
+        $directory->setName($name);
+        $directory->setParent($parentDirectory);
+
+        $this->entityManager->persist($directory);
+        $this->entityManager->flush();
+
+        return $directory;
     }
 }

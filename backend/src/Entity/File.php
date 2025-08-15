@@ -17,7 +17,7 @@ class File
     #[ORM\ManyToOne(targetEntity: Directory::class, inversedBy: 'files')]
     private Directory $directory;
 
-    #[ORM\Column(type: 'string', length: 255, unique: true)]
+    #[ORM\Column(type: 'string', length: 255)]
     private string $name;
 
     #[ORM\Column(type: 'string', length: 15)]
