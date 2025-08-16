@@ -2,15 +2,20 @@
 
 namespace Fileknight\Controller;
 
+use Doctrine\ORM\NonUniqueResultException;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\DTO\DirectoryDTO;
 use Fileknight\DTO\FileDTO;
 use Fileknight\Entity\Directory;
+use Fileknight\Entity\File;
 use Fileknight\Entity\User;
 use Fileknight\Exception\DirectoryAccessDeniedException;
 use Fileknight\Exception\DirectoryNotFoundException;
+use Fileknight\Exception\FileAccessDeniedException;
+use Fileknight\Exception\FileNotFoundException;
 use Fileknight\Repository\DirectoryRepository;
+use Fileknight\Repository\FileRepository;
 use Fileknight\Service\FileService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
@@ -28,19 +33,24 @@ class FileController extends AbstractController
     public function __construct(
         private readonly FileService         $fileService,
         private readonly DirectoryRepository $directoryRepository,
+        private readonly FileRepository      $fileRepository,
     )
     {
     }
 
     /**
-     * List the content of the directory given by the folderId query param.
-     * If folderId is not given return the content of root directory.
+     * List the content of the directory given by the parentId query param.
+     * If parentId is not given return the content of root directory.
+     *
+     *  ```
+     *  GET /api/files?parentId={id}
+     *  ```
      */
     #[Route(path: '', name: 'api.files', methods: ['GET'])]
-    public function listContent(Request $request): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         try {
-            $directory = $this->resolveRequestDirectory($request);
+            $directory = $this->resolveRequestDirectory($request->query->get('parentId'));
             $content = $this->fileService->getDirectoryContent($directory);
 
             return ApiResponse::success($content->toArray());
@@ -52,8 +62,16 @@ class FileController extends AbstractController
     }
 
     /**
-     * Upload file to directory given by the folderId query param.
-     * If folderId is not given uploads to root directory.
+     * Upload file
+     *
+     * ```
+     * POST /api/files
+     * {
+     *     file: <file>
+     *     parentId: {parentId} - The folder in which to upload it. If not specified upload in root
+     *     name: {name} - The name to upload the file with. If not specified use the original file name
+     * }
+     * ```
      */
     #[Route(path: '', name: 'api.files.upload', methods: ['POST'])]
     public function upload(Request $request): JsonResponse
@@ -69,8 +87,8 @@ class FileController extends AbstractController
         }
 
         try {
-            $directory = $this->resolveRequestDirectory($request);
-            $this->fileService->uploadFile($user, $directory, $uploadedFile);
+            $directory = $this->resolveRequestDirectory($request->request->get('parentId'));
+            $file = $this->fileService->uploadFile($user, $directory, $uploadedFile);
 
             return ApiResponse::success(
                 FileDTO::fromEntity($file)->toArray(),
@@ -84,19 +102,53 @@ class FileController extends AbstractController
     }
 
     /**
-     * Creates a new directory inside the directory given by folderId query param.
-     * If folderId is not given the new directory is created inside root.
+     * ```
+     * DELETE /api/files/files/{id}
+     * ```
+     *
+     * Delete a file
      */
-    #[Route(path: '/create', name: 'api.files.create', methods: ['POST'])]
+    #[Route('/files/{id}', name: 'api.files.delete', methods: ['DELETE'])]
+    public function deleteFile(Request $request, string $id): JsonResponse
+    {
+        try {
+            $file = $this->fileRepository->find(['id' => $id]);
+            $this->assertFileExistenceOwnership($file, $id);
+
+            $this->fileService->deleteFile($file);
+
+            return ApiResponse::success(
+                [],
+                'File deleted successfully.',
+            );
+        } catch (FileAccessDeniedException $exception) {
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
+        } catch (Exception $e) {
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * ```
+     * POST /api/files/folders
+     * {
+     *      name: <name>,
+     *      parentId: {parentId}
+     * }
+     * ```
+     *
+     * Creates a new folder.
+     */
+    #[Route(path: '/folders', name: 'api.files.folders', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $name = $request->request->get('name');
         if ($name === null) {
-            return new JsonResponse(['error' => 'Folder name must be specified'], Response::HTTP_BAD_REQUEST);
+            return ApiResponse::error([], 'Folder name is required', Response::HTTP_BAD_REQUEST);
         }
 
         try {
-            $directory = $this->resolveRequestDirectory($request);
+            $directory = $this->resolveRequestDirectory($request->request->get('parentId'));
             $created = $this->fileService->createDirectory($directory, $name);
 
             return ApiResponse::success(
@@ -111,22 +163,47 @@ class FileController extends AbstractController
     }
 
     /**
-     * Resolves the request directory based on the folder id.
-     * If folder id is null => root directory
-     * @throws DirectoryNotFoundException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws DirectoryAccessDeniedException
+     * ```
+     * DELETE /api/files/folders/{id}
+     * ```
+     *
+     * Recursively delete a folder
      */
-    private function resolveRequestDirectory(Request $request): Directory
+    #[Route('/folders/{id}', name: 'api.files.folders.delete', methods: ['DELETE'])]
+    public function deleteFolder(Request $request, string $id): JsonResponse
     {
-        $folderId = $request->query->get('folderId');
-        if ($folderId === null) {
+        try {
+            $directory = $this->resolveRequestDirectory($id);
+            $this->fileService->deleteDirectory($directory);
+
+            return ApiResponse::success(
+                [],
+                'Folder deleted successfully.',
+            );
+        } catch (DirectoryAccessDeniedException $exception) {
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
+        } catch (Exception $e) {
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Resolves the request directory based on the given id.
+     * @param string|null $id If it is null return the root directory
+     *
+     * @throws DirectoryAccessDeniedException
+     * @throws DirectoryNotFoundException
+     * @throws NonUniqueResultException
+     */
+    private function resolveRequestDirectory(?string $id): Directory
+    {
+        if ($id === null) {
             /** @var User $user */
             $user = $this->getUser();
             $directory = $this->directoryRepository->findRootByUser($user);
         } else {
-            $directory = $this->directoryRepository->findOneBy(['id' => $folderId]);
-            $this->assertFolderExistenceOwnership($directory, $folderId);
+            $directory = $this->directoryRepository->findOneBy(['id' => $id]);
+            $this->assertFolderExistenceOwnership($directory, $id);
         }
 
         return $directory;
@@ -151,6 +228,27 @@ class FileController extends AbstractController
         $root = $this->fileService->getRootFromDirectory($directory);
         if ($root->getOwner() !== $user) {
             throw new DirectoryAccessDeniedException($folderId);
+        }
+    }
+
+    /**
+     *  Asserts that given file exists (is not null) and is
+     *  in the ownership of the currently logged in user
+     * @throws FileNotFoundException
+     * @throws FileAccessDeniedException
+     */
+    private function assertFileExistenceOwnership(?File $file, string $fileId): void
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if($file === null) {
+            throw new FileNotFoundException($fileId);
+        }
+
+        $root = $this->fileService->getRootFromDirectory($file->getDirectory());
+        if ($root->getOwner() !== $user) {
+            throw new FileAccessDeniedException($file);
         }
     }
 }

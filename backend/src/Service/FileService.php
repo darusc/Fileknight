@@ -12,6 +12,7 @@ use Fileknight\Entity\User;
 use Fileknight\Exception\UserDirCreationException;
 use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Repository\FileRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -23,6 +24,7 @@ class FileService
     private FileSystem $filesystem;
 
     public function __construct(
+        private readonly Security $security,
         private readonly EntityManagerInterface $entityManager,
         private readonly DirectoryRepository    $directoryRepository,
         private readonly FileRepository         $fileRepository,
@@ -146,6 +148,17 @@ class FileService
     }
 
     /**
+     * Delete file
+     */
+    public function deleteFile(File $file): void
+    {
+        $this->filesystem->remove($this->getRootDirectoryPath($this->security->getUser()) . '/' . $file->getId());
+
+        $this->entityManager->remove($file);
+        $this->entityManager->flush();
+    }
+
+    /**
      * Create a new directory. Files are stored in a flat system, directory structure
      * is created only through database records.
      * @param Directory $parentDirectory
@@ -162,5 +175,24 @@ class FileService
         $this->entityManager->flush();
 
         return $directory;
+    }
+
+    /**
+     * Recursively delete a directory
+     * @param Directory $directory
+     * @return void
+     */
+    public function deleteDirectory(Directory $directory): void
+    {
+        foreach ($directory->getChildren() as $childDirectory) {
+            $this->deleteDirectory($childDirectory);
+        }
+
+        foreach ($directory->getFiles() as $file) {
+            $this->deleteFile($file);
+        }
+
+        $this->entityManager->remove($directory);
+        $this->entityManager->flush();
     }
 }
