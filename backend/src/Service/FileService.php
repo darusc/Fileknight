@@ -24,7 +24,7 @@ class FileService
     private FileSystem $filesystem;
 
     public function __construct(
-        private readonly Security $security,
+        private readonly Security               $security,
         private readonly EntityManagerInterface $entityManager,
         private readonly DirectoryRepository    $directoryRepository,
         private readonly FileRepository         $fileRepository,
@@ -148,6 +148,35 @@ class FileService
     }
 
     /**
+     * Update file - rename / move
+     * @param File $file
+     * @param Directory|null $newParentDirectory
+     * @param string|null $newName
+     * @return void
+     */
+    public function updateFile(File $file, ?Directory $newParentDirectory, ?string $newName): void
+    {
+        // Set the new name. The file is not renamed on disk because we use the
+        // file's random id as the name on disk
+        if ($newName !== null) {
+            echo 'update name ' . $newName . PHP_EOL;
+            $file->setName($newName);
+        }
+
+        // Set new parent directory. As files are stored in a flat system, no
+        // file moving on disk is necessary, just updating the database file entry
+        if ($newParentDirectory !== null) {
+            echo 'update parent directory ' . $newParentDirectory->getName() . PHP_EOL;
+            $file->setDirectory($newParentDirectory);
+        }
+
+        // Save changes. File is fetched from the database through the repository
+        // and already managed by the ORM, so only flushing is necessary to
+        // save the changes (no persist needed)
+        $this->entityManager->flush();
+    }
+
+    /**
      * Delete file
      */
     public function deleteFile(File $file): void
@@ -175,6 +204,34 @@ class FileService
         $this->entityManager->flush();
 
         return $directory;
+    }
+
+    /**
+     * Update directory - rename / move
+     * @param Directory $directory
+     * @param Directory|null $newParentDirectory
+     * @param string|null $newName
+     * @return void
+     */
+    public function updateDirectory(Directory $directory, ?Directory $newParentDirectory, ?string $newName): void
+    {
+        // As the directory structure is purely virtual no disk
+        // operations are required (no renaming / moving)
+
+        // Set new name.
+        if ($newName !== null) {
+            $directory->setName($newName);
+        }
+
+        // Set new parent directory.
+        if ($newParentDirectory !== null) {
+            $directory->setParent($newParentDirectory);
+        }
+
+        // Save changes. Directory is fetched from the database through the repository
+        // and already managed by the ORM, so only flushing is necessary to
+        // save the changes (no persist needed)
+        $this->entityManager->flush();
     }
 
     /**

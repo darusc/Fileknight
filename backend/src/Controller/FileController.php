@@ -2,24 +2,17 @@
 
 namespace Fileknight\Controller;
 
-use Doctrine\ORM\NonUniqueResultException;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\Controller\Traits\DirectoryResolverTrait;
-use Fileknight\DTO\DirectoryDTO;
 use Fileknight\DTO\FileDTO;
-use Fileknight\Entity\Directory;
-use Fileknight\Entity\File;
 use Fileknight\Entity\User;
 use Fileknight\Exception\DirectoryAccessDeniedException;
-use Fileknight\Exception\DirectoryNotFoundException;
 use Fileknight\Exception\FileAccessDeniedException;
-use Fileknight\Exception\FileNotFoundException;
 use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Repository\FileRepository;
 use Fileknight\Service\FileService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -77,7 +70,7 @@ class FileController extends AbstractController
      * ```
      */
     #[Route(path: '', name: 'api.files.upload', methods: ['POST'])]
-    public function upload(Request $request): JsonResponse
+    public function create(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -105,14 +98,55 @@ class FileController extends AbstractController
     }
 
     /**
+     * Update file - rename / move
+     *
+     * ```
+     * POST /api/files/files/{id}
+     * {
+     *     parentId: {parentId} - The file's new parent folder
+     *     name: {name} - The file's new name
+     * }
+     * ```
+     */
+    #[Route('/files/{id}', name: 'api.files.update', methods: ['PATCH'])]
+    public function update(Request $request, string $id): JsonResponse
+    {
+        try {
+            $file = $this->fileRepository->find(['id' => $id]);
+            $this->assertFileExistenceOwnership($file, $id);
+
+            $content = json_decode($request->getContent(), true);
+            $name = $content['name'] ?? null;
+            $parentId = $content['parentId'] ?? null;
+
+            if ($name === null && $parentId === null) {
+                return ApiResponse::error([], 'File new name or new parent id is required.', Response::HTTP_BAD_REQUEST);
+            }
+
+            $newParent = null;
+            if ($parentId != null) {
+                $newParent = $this->resolveRequestDirectory($parentId);
+            }
+
+            $this->fileService->updateFile($file, $newParent, $name);
+
+            return ApiResponse::success([$name, ...FileDTO::fromEntity($file)->toArray()], 'File updated successfully.');
+        } catch (FileAccessDeniedException $exception) {
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
+        } catch (Exception $e) {
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     *  Delete a file*
+     *
      * ```
      * DELETE /api/files/files/{id}
      * ```
-     *
-     * Delete a file
      */
     #[Route('/files/{id}', name: 'api.files.delete', methods: ['DELETE'])]
-    public function deleteFile(Request $request, string $id): JsonResponse
+    public function delete(Request $request, string $id): JsonResponse
     {
         try {
             $file = $this->fileRepository->find(['id' => $id]);

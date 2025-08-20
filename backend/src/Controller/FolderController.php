@@ -65,6 +65,47 @@ class FolderController
     }
 
     /**
+     * Update folder - rename / move
+     *
+     * ```
+     * POST /api/files/folders/{id}
+     * {
+     *     parentId: {parentId} - The folders's new parent folder
+     *     name: {name} - The folders's new name
+     * }
+     * ```
+     */
+    #[Route('/{id}', name: 'api.files.folders.update', methods: ['PATCH'])]
+    public function update(Request $request, string $id): JsonResponse
+    {
+        try {
+            $directory = $this->directoryRepository->find(['id' => $id]);
+            $this->assertFolderExistenceOwnership($directory, $id);
+
+            $content = json_decode($request->getContent(), true);
+            $name = $content['name'] ?? null;
+            $parentId = $content['parentId'] ?? null;
+
+            if ($name === null && $parentId === null) {
+                return ApiResponse::error([], 'Folder new name or new parent id is required.', Response::HTTP_BAD_REQUEST);
+            }
+
+            $newParent = null;
+            if ($parentId != null) {
+                $newParent = $this->resolveRequestDirectory($parentId);
+            }
+
+            $this->fileService->updateDirectory($directory, $newParent, $name);
+
+            return ApiResponse::success(DirectoryDTO::fromEntity($directory)->toArray(), 'Folder updated successfully.');
+        } catch (DirectoryAccessDeniedException $exception) {
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
+        } catch (Exception $e) {
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * ```
      * DELETE /api/files/folders/{id}
      * ```

@@ -14,7 +14,7 @@ use Fileknight\Exception\FileNotFoundException;
 trait DirectoryResolverTrait
 {
     /**
-     * Resolves the request directory based on the given id.
+     * Resolves the request directory based on the given id and asserts existence and ownership
      * @param string|null $id If it is null return the root directory
      *
      * @throws DirectoryAccessDeniedException
