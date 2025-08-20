@@ -5,6 +5,7 @@ namespace Fileknight\Controller;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\Controller\Traits\DirectoryResolverTrait;
+use Fileknight\Controller\Traits\RequestJsonGetterTrait;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
 use Fileknight\DTO\DirectoryDTO;
 use Fileknight\Exception\DirectoryAccessDeniedException;
@@ -23,6 +24,7 @@ class FolderController
 {
     use DirectoryResolverTrait;
     use UserEntityGetterTrait;
+    use RequestJsonGetterTrait;
 
     public function __construct(
         private readonly DirectoryService    $folderService,
@@ -45,13 +47,15 @@ class FolderController
     #[Route(path: '', name: 'api.files.folders', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $name = $request->request->get('name');
+        $parentId = $this->getJsonField($request, 'parentId');
+        $name = $this->getJsonField($request, 'name');
+
         if ($name === null) {
             return ApiResponse::error([], 'Folder name is required', Response::HTTP_BAD_REQUEST);
         }
 
         try {
-            $directory = $this->resolveRequestDirectory($request->request->get('parentId'));
+            $directory = $this->resolveRequestDirectory($parentId);
             AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
             $created = $this->folderService->create($directory, $name);
@@ -71,10 +75,10 @@ class FolderController
      * Update folder - rename / move
      *
      * ```
-     * POST /api/files/folders/{id}
+     * PATCH /api/files/folders/{id}
      * {
-     *     parentId: {parentId} - The folders's new parent folder
-     *     name: {name} - The folders's new name
+     *     parentId: {parentId} - The folder's new parent folder
+     *     name: {name} - The folder's new name
      * }
      * ```
      */
@@ -86,9 +90,8 @@ class FolderController
             DirectoryService::assertDirectoryExists($directory);
             AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
-            $content = json_decode($request->getContent(), true);
-            $name = $content['name'] ?? null;
-            $parentId = $content['parentId'] ?? null;
+            $parentId = $this->getJsonField($request, 'parentId');
+            $name = $this->getJsonField($request, 'name');
 
             if ($name === null && $parentId === null) {
                 return ApiResponse::error([], 'Folder new name or new parent id is required.', Response::HTTP_BAD_REQUEST);

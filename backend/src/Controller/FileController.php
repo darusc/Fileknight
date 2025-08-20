@@ -5,6 +5,7 @@ namespace Fileknight\Controller;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\Controller\Traits\DirectoryResolverTrait;
+use Fileknight\Controller\Traits\RequestJsonGetterTrait;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
 use Fileknight\DTO\FileDTO;
 use Fileknight\Exception\DirectoryAccessDeniedException;
@@ -29,6 +30,7 @@ class FileController extends AbstractController
 {
     use DirectoryResolverTrait;
     use UserEntityGetterTrait;
+    use RequestJsonGetterTrait;
 
     public function __construct(
         private readonly FileService         $fileService,
@@ -84,8 +86,11 @@ class FileController extends AbstractController
             return new JsonResponse(['error' => 'No file uploaded'], Response::HTTP_BAD_REQUEST);
         }
 
+        $name = $this->getJsonField($request, 'name');
+        $parentId = $this->getJsonField($request, 'parentId');
+
         try {
-            $directory = $this->resolveRequestDirectory($request->request->get('parentId'));
+            $directory = $this->resolveRequestDirectory($parentId);
             AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
             $file = $this->fileService->upload($this->getUserEntity(), $directory, $uploadedFile);
@@ -150,9 +155,8 @@ class FileController extends AbstractController
             FileService::assertFileExists($file);
             AccessGuardService::assertFileAccess($file, $this->getUserEntity());
 
-            $content = json_decode($request->getContent(), true);
-            $name = $content['name'] ?? null;
-            $parentId = $content['parentId'] ?? null;
+            $name = $this->getJsonField($request, 'name');
+            $parentId = $this->getJsonField($request, 'parentId');
 
             if ($name === null && $parentId === null) {
                 return ApiResponse::error([], 'File new name or new parent id is required.', Response::HTTP_BAD_REQUEST);
