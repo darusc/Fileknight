@@ -9,14 +9,17 @@ use Fileknight\DTO\FileDTO;
 use Fileknight\Entity\User;
 use Fileknight\Exception\DirectoryAccessDeniedException;
 use Fileknight\Exception\FileAccessDeniedException;
+use Fileknight\Exception\FileNotFoundException;
 use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Repository\FileRepository;
 use Fileknight\Service\FileService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -98,6 +101,38 @@ class FileController extends AbstractController
     }
 
     /**
+     * Download file
+     *
+     * ```
+     * GET /api/files/files/{id}/download
+     * ```
+     */
+    #[Route(path: '/files/{id}/download', name: 'api.files.download', methods: ['GET'])]
+    public function download(Request $request, string $id): BinaryFileResponse|JsonResponse
+    {
+        try {
+            /** @var User $user */
+            $user = $this->getUser();
+
+            $file = $this->fileRepository->find(['id' => $id]);
+            $this->assertFileExistenceOwnership($file, $id);
+
+            $path = $this->fileService->getFilePath($user, $file);
+
+            $response = new BinaryFileResponse($path);
+            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $file->getName());
+
+            return $response;
+        } catch (FileAccessDeniedException $exception) {
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
+        } catch(FileNotFoundException $exception) {
+            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_NOT_FOUND);
+        } catch (Exception $e) {
+            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Update file - rename / move
      *
      * ```
@@ -139,7 +174,7 @@ class FileController extends AbstractController
     }
 
     /**
-     *  Delete a file*
+     *  Delete a file
      *
      * ```
      * DELETE /api/files/files/{id}

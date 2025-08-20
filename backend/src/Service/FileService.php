@@ -15,6 +15,7 @@ use Fileknight\Repository\FileRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -145,6 +146,15 @@ class FileService
         $uploadedFile->move($this->getRootDirectoryPath($user), $file->getId());
 
         return $file;
+    }
+
+    /**
+     * Gets the path for the given file is the filesystem.
+     * File should be under the given user's root directory.
+     */
+    public function getFilePath(User $user, File $file): string
+    {
+        return $this->getRootDirectoryPath($user) . '/' . $file->getId();
     }
 
     /**
