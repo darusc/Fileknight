@@ -4,8 +4,9 @@ namespace Fileknight\Exception;
 
 class DirectoryNotFoundException extends \Exception
 {
-    public function __construct(string $directory)
+    public function __construct(?string $directory = null)
     {
-        parent::__construct("Directory '$directory' not found.");
+        $dir = $directory ?? '';
+        parent::__construct("Directory $dir not found.");
     }
 }

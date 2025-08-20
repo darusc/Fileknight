@@ -4,8 +4,9 @@ namespace Fileknight\Exception;
 
 class FileNotFoundException extends \Exception
 {
-    public function __construct(string $file)
+    public function __construct(?string $file = null)
     {
-        parent::__construct("File not found: $file");
+        $f = $file ?? '';
+        parent::__construct("File $f not found");
     }
 }

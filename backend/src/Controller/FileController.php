@@ -5,14 +5,14 @@ namespace Fileknight\Controller;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\Controller\Traits\DirectoryResolverTrait;
+use Fileknight\Controller\Traits\UserEntityGetterTrait;
 use Fileknight\DTO\FileDTO;
-use Fileknight\Entity\User;
 use Fileknight\Exception\DirectoryAccessDeniedException;
 use Fileknight\Exception\FileAccessDeniedException;
 use Fileknight\Exception\FileNotFoundException;
-use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Repository\FileRepository;
-use Fileknight\Service\FileService;
+use Fileknight\Service\AccessGuardService;
+use Fileknight\Service\File\FileService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -28,10 +28,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class FileController extends AbstractController
 {
     use DirectoryResolverTrait;
+    use UserEntityGetterTrait;
 
     public function __construct(
         private readonly FileService         $fileService,
-        private readonly DirectoryRepository $directoryRepository,
         private readonly FileRepository      $fileRepository,
     )
     {
@@ -50,7 +50,9 @@ class FileController extends AbstractController
     {
         try {
             $directory = $this->resolveRequestDirectory($request->query->get('parentId'));
-            $content = $this->fileService->getDirectoryContent($directory);
+            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+
+            $content = $this->fileService->list($directory);
 
             return ApiResponse::success($content->toArray());
         } catch (DirectoryAccessDeniedException $exception) {
@@ -75,9 +77,6 @@ class FileController extends AbstractController
     #[Route(path: '', name: 'api.files.upload', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        /** @var User $user */
-        $user = $this->getUser();
-
         /** @var UploadedFile|null $uploadedFile */
         $uploadedFile = $request->files->get('file');
 
@@ -87,7 +86,9 @@ class FileController extends AbstractController
 
         try {
             $directory = $this->resolveRequestDirectory($request->request->get('parentId'));
-            $file = $this->fileService->uploadFile($user, $directory, $uploadedFile);
+            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+
+            $file = $this->fileService->upload($this->getUserEntity(), $directory, $uploadedFile);
 
             return ApiResponse::success(
                 FileDTO::fromEntity($file)->toArray(),
@@ -108,16 +109,14 @@ class FileController extends AbstractController
      * ```
      */
     #[Route(path: '/files/{id}/download', name: 'api.files.download', methods: ['GET'])]
-    public function download(Request $request, string $id): BinaryFileResponse|JsonResponse
+    public function download(string $id): BinaryFileResponse|JsonResponse
     {
         try {
-            /** @var User $user */
-            $user = $this->getUser();
-
             $file = $this->fileRepository->find(['id' => $id]);
-            $this->assertFileExistenceOwnership($file, $id);
+            FileService::assertFileExists($file);
+            AccessGuardService::assertFileAccess($file, $this->getUserEntity());
 
-            $path = $this->fileService->getFilePath($user, $file);
+            $path = $this->fileService->getFilePath($this->getUserEntity(), $file);
 
             $response = new BinaryFileResponse($path);
             $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $file->getName());
@@ -148,7 +147,8 @@ class FileController extends AbstractController
     {
         try {
             $file = $this->fileRepository->find(['id' => $id]);
-            $this->assertFileExistenceOwnership($file, $id);
+            FileService::assertFileExists($file);
+            AccessGuardService::assertFileAccess($file, $this->getUserEntity());
 
             $content = json_decode($request->getContent(), true);
             $name = $content['name'] ?? null;
@@ -163,7 +163,7 @@ class FileController extends AbstractController
                 $newParent = $this->resolveRequestDirectory($parentId);
             }
 
-            $this->fileService->updateFile($file, $newParent, $name);
+            $this->fileService->update($file, $newParent, $name);
 
             return ApiResponse::success([$name, ...FileDTO::fromEntity($file)->toArray()], 'File updated successfully.');
         } catch (FileAccessDeniedException $exception) {
@@ -181,17 +181,18 @@ class FileController extends AbstractController
      * ```
      */
     #[Route('/files/{id}', name: 'api.files.delete', methods: ['DELETE'])]
-    public function delete(Request $request, string $id): JsonResponse
+    public function delete(string $id): JsonResponse
     {
         try {
             $file = $this->fileRepository->find(['id' => $id]);
-            $this->assertFileExistenceOwnership($file, $id);
+            FileService::assertFileExists($file);
+            AccessGuardService::assertFileAccess($file, $this->getUserEntity());
 
-            $this->fileService->deleteFile($file);
+            $this->fileService->delete($this->getUserEntity(), $file);
 
             return ApiResponse::success(
                 [],
-                'File deleted successfully.',
+                "File $id deleted successfully.",
             );
         } catch (FileAccessDeniedException $exception) {
             return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);

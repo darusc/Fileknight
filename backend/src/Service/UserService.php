@@ -7,6 +7,7 @@ use Fileknight\Entity\User;
 use Fileknight\Exception\UserAlreadyExists;
 use Fileknight\Exception\UserDirCreationException;
 use Fileknight\Repository\UserRepository;
+use Fileknight\Service\File\DirectoryService;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
@@ -18,7 +19,7 @@ readonly class UserService
         private EntityManagerInterface      $entityManager,
         private UserRepository              $userRepository,
         private UserPasswordHasherInterface $passwordHasher,
-        private FileService                 $fileService,
+        private DirectoryService            $directoryService,
     )
     {
     }
@@ -43,7 +44,7 @@ readonly class UserService
         $this->entityManager->flush();
 
         try {
-            $this->fileService->createRootDirectory($user);
+            $this->directoryService->createRoot($user);
         } catch (UserDirCreationException $exception) {
             // Delete the user if root directory creation failed
             // and rethrow the exception
@@ -56,7 +57,7 @@ readonly class UserService
 
     public function delete(User $user): void
     {
-        $this->fileService->deleteRootDirectory($user);
+        $this->directoryService->deleteRoot($user);
         $this->entityManager->remove($user);
         $this->entityManager->flush();
     }

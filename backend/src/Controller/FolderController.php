@@ -5,11 +5,12 @@ namespace Fileknight\Controller;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\Controller\Traits\DirectoryResolverTrait;
+use Fileknight\Controller\Traits\UserEntityGetterTrait;
 use Fileknight\DTO\DirectoryDTO;
 use Fileknight\Exception\DirectoryAccessDeniedException;
 use Fileknight\Repository\DirectoryRepository;
-use Fileknight\Repository\FileRepository;
-use Fileknight\Service\FileService;
+use Fileknight\Service\AccessGuardService;
+use Fileknight\Service\File\DirectoryService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,11 +22,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class FolderController
 {
     use DirectoryResolverTrait;
+    use UserEntityGetterTrait;
 
     public function __construct(
-        private readonly FileService         $fileService,
+        private readonly DirectoryService    $folderService,
         private readonly DirectoryRepository $directoryRepository,
-        private readonly FileRepository      $fileRepository,
     )
     {
     }
@@ -51,7 +52,9 @@ class FolderController
 
         try {
             $directory = $this->resolveRequestDirectory($request->request->get('parentId'));
-            $created = $this->fileService->createDirectory($directory, $name);
+            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+
+            $created = $this->folderService->create($directory, $name);
 
             return ApiResponse::success(
                 DirectoryDTO::fromEntity($created)->toArray(),
@@ -80,7 +83,8 @@ class FolderController
     {
         try {
             $directory = $this->directoryRepository->find(['id' => $id]);
-            $this->assertFolderExistenceOwnership($directory, $id);
+            DirectoryService::assertDirectoryExists($directory);
+            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
             $content = json_decode($request->getContent(), true);
             $name = $content['name'] ?? null;
@@ -95,7 +99,7 @@ class FolderController
                 $newParent = $this->resolveRequestDirectory($parentId);
             }
 
-            $this->fileService->updateDirectory($directory, $newParent, $name);
+            $this->folderService->update($directory, $newParent, $name);
 
             return ApiResponse::success(DirectoryDTO::fromEntity($directory)->toArray(), 'Folder updated successfully.');
         } catch (DirectoryAccessDeniedException $exception) {
@@ -113,15 +117,18 @@ class FolderController
      * Recursively delete a folder
      */
     #[Route('/{id}', name: 'api.files.folders.delete', methods: ['DELETE'])]
-    public function deleteFolder(Request $request, string $id): JsonResponse
+    public function delete(string $id): JsonResponse
     {
         try {
-            $directory = $this->resolveRequestDirectory($id);
-            $this->fileService->deleteDirectory($directory);
+            $directory = $this->directoryRepository->find(['id' => $id]);
+            DirectoryService::assertDirectoryExists($directory);
+            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+
+            $this->folderService->delete($directory);
 
             return ApiResponse::success(
                 [],
-                'Folder deleted successfully.',
+                "Folder $id deleted successfully.",
             );
         } catch (DirectoryAccessDeniedException $exception) {
             return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
