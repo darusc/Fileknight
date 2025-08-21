@@ -22,7 +22,7 @@ class AccessGuardService
     public static function assertDirectoryAccess(Directory $directory, User $user): void
     {
         // Only the root directory has the owner
-        $owner = $directory->getOwner() ?? DirectoryService::getRootFromDirectory($directory)->getOwner();
+        $owner = $directory->getOwner() ?? $directory->getRoot()->getOwner();
 
         if ($owner !== $user) {
             throw new DirectoryAccessDeniedException($directory->getId());
@@ -35,7 +35,7 @@ class AccessGuardService
      */
     public static function assertFileAccess(File $file, User $user): void
     {
-        $owner = DirectoryService::getRootFromDirectory($file->getDirectory())->getOwner();
+        $owner = $file->getDirectory()->getRoot()->getOwner();
         if ($owner !== $user) {
             throw new FileAccessDeniedException($file);
         }
