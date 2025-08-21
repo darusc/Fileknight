@@ -11,16 +11,17 @@ use Fileknight\Entity\File;
 use Fileknight\Entity\User;
 use Fileknight\Exception\FileNotFoundException;
 use Fileknight\Repository\FileRepository;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-class FileService extends BaseFileService
+readonly class FileService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly FileRepository         $fileRepository,
+        private EntityManagerInterface $entityManager,
+        private FileRepository         $fileRepository,
+        private FileSystem             $filesystem,
     )
     {
-        parent::__construct();
     }
 
     /**
@@ -34,12 +35,11 @@ class FileService extends BaseFileService
     }
 
     /**
-     * Gets the path for the given file is the filesystem.
-     * File should be under the given user's root directory.
+     * Get the real physical (on disk) path for a file
      */
-    public function getFilePath(User $user, File $file): string
+    public static function getPhysicalPath(File $file): string
     {
-        return $this->getRootDirectoryPath($user) . '/' . $file->getId();
+        return DirectoryService::getRootDirectoryPathFromDir($file->getDirectory()) . '/' . $file->getId();
     }
 
     /**
@@ -72,12 +72,11 @@ class FileService extends BaseFileService
 
     /**
      * Upload a file
-     * @param User $user
      * @param Directory $directory The directory where the file should be uploaded to
      * @param UploadedFile $uploadedFile The file to be uploaded
      * @return File The uploaded file
      */
-    public function upload(User $user, Directory $directory, UploadedFile $uploadedFile): File
+    public function upload(Directory $directory, UploadedFile $uploadedFile): File
     {
         $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
 
@@ -90,7 +89,7 @@ class FileService extends BaseFileService
         $this->entityManager->persist($file);
         $this->entityManager->flush();
 
-        $uploadedFile->move($this->getRootDirectoryPath($user), $file->getId());
+        $uploadedFile->move(DirectoryService::getRootDirectoryPathFromDir($directory), $file->getId());
 
         return $file;
     }
@@ -107,14 +106,12 @@ class FileService extends BaseFileService
         // Set the new name. The file is not renamed on disk because we use the
         // file's random id as the name on disk
         if ($newName !== null) {
-            echo 'update name ' . $newName . PHP_EOL;
             $file->setName($newName);
         }
 
         // Set new parent directory. As files are stored in a flat system, no
         // file moving on disk is necessary, just updating the database file entry
         if ($newParentDirectory !== null) {
-            echo 'update parent directory ' . $newParentDirectory->getName() . PHP_EOL;
             $file->setDirectory($newParentDirectory);
         }
 
@@ -127,9 +124,9 @@ class FileService extends BaseFileService
     /**
      * Delete file
      */
-    public function delete(User $user, File $file): void
+    public function delete(File $file): void
     {
-        $this->filesystem->remove($this->getRootDirectoryPath($user) . '/' . $file->getId());
+        $this->filesystem->remove(static::getPhysicalPath($file));
 
         $this->entityManager->remove($file);
         $this->entityManager->flush();

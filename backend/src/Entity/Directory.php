@@ -90,7 +90,7 @@ class Directory
      */
     public function setParent(Directory $parent): void
     {
-        if($this->owner === null) {
+        if ($this->owner === null) {
             $this->parent = $parent;
         }
     }
@@ -107,8 +107,40 @@ class Directory
      */
     public function setOwner(User $owner): void
     {
-        if($this->parent === null) {
+        if ($this->parent === null) {
             $this->owner = $owner;
         }
+    }
+
+    /**
+     * Gets the path in the virtual database tree-like structure.
+     * Path is relative to the user's root directory.
+     *
+     * This is not the real path inside the filesystem (There are
+     * no directories inside the filesystem, only the user's root
+     * directory)
+     */
+    public function getPath(): string
+    {
+        $path = [$this->name];
+        $current = $this->parent;
+        while ($current !== null) {
+            $path[] = $current->getName();
+            $current = $current->getParent();
+        }
+
+        return implode('/', array_reverse($path));
+    }
+
+    /**
+     * Get the root. Root directory is the user directory on disk
+     */
+    public function getRoot(): Directory
+    {
+        $current = $this;
+        while ($current->getParent() !== null) {
+            $current = $current->getParent();
+        }
+        return $current;
     }
 }

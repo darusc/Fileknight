@@ -9,17 +9,18 @@ use Fileknight\Exception\DirectoryNotFoundException;
 use Fileknight\Exception\UserDirCreationException;
 use Fileknight\Repository\DirectoryRepository;
 use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-class DirectoryService extends BaseFileService
+readonly class DirectoryService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly DirectoryRepository    $directoryRepository,
-        private readonly FileService            $fileService,
+        private EntityManagerInterface $entityManager,
+        private DirectoryRepository    $directoryRepository,
+        private FileService            $fileService,
+        private FileSystem             $filesystem
     )
     {
-        parent::__construct();
     }
 
     /**
@@ -32,13 +33,22 @@ class DirectoryService extends BaseFileService
         }
     }
 
-    public static function getRootFromDirectory(Directory $directory): Directory
+    /**
+     * Gets the real physical path (on disk) to the user's root directory
+     * from the given UserInterface by its identifier
+     */
+    public static function getRootDirectoryPathFromUser(UserInterface $user): string
     {
-        $current = $directory;
-        while ($current->getParent() !== null) {
-            $current = $current->getParent();
-        }
-        return $current;
+        return $_ENV['USER_STORAGE_PATH'] . '/' . $user->getUserIdentifier();
+    }
+
+    /**
+     * Gets the real physical path (on disk) of the root directory
+     * from the given directory
+     */
+    public static function getRootDirectoryPathFromDir(Directory $directory): string
+    {
+        return $_ENV['USER_STORAGE_PATH'] . '/' . $directory->getRoot()->getName();
     }
 
     /**
@@ -49,7 +59,7 @@ class DirectoryService extends BaseFileService
     public function createRoot(User $user): void
     {
         if (!$this->rootDirectoryExists($user)) {
-            $path = $this->getRootDirectoryPath($user);
+            $path = static::getRootDirectoryPathFromUser($user);
             try {
                 // Create the physical directory
                 $this->filesystem->mkdir($path, 0775);
@@ -77,7 +87,7 @@ class DirectoryService extends BaseFileService
             $this->entityManager->flush();
 
             // Remove the directory from physical storage
-            $this->filesystem->remove($this->getRootDirectoryPath($user));
+            $this->filesystem->remove(static::getRootDirectoryPathFromUser($user));
         }
     }
 
@@ -149,7 +159,7 @@ class DirectoryService extends BaseFileService
 
     private function rootDirectoryExists(UserInterface $user): bool
     {
-        $path = $this->getRootDirectoryPath($user);
+        $path = static::getRootDirectoryPathFromUser($user);
         return $this->filesystem->exists($path);
     }
 }

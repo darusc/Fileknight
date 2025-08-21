@@ -93,7 +93,7 @@ class FileController extends AbstractController
             $directory = $this->resolveRequestDirectory($parentId);
             AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
-            $file = $this->fileService->upload($this->getUserEntity(), $directory, $uploadedFile);
+            $file = $this->fileService->upload($directory, $uploadedFile);
 
             return ApiResponse::success(
                 FileDTO::fromEntity($file)->toArray(),
@@ -121,7 +121,7 @@ class FileController extends AbstractController
             FileService::assertFileExists($file);
             AccessGuardService::assertFileAccess($file, $this->getUserEntity());
 
-            $path = $this->fileService->getFilePath($this->getUserEntity(), $file);
+            $path = FileService::getPhysicalPath($file);
 
             $response = new BinaryFileResponse($path);
             $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $file->getName());
@@ -192,7 +192,7 @@ class FileController extends AbstractController
             FileService::assertFileExists($file);
             AccessGuardService::assertFileAccess($file, $this->getUserEntity());
 
-            $this->fileService->delete($this->getUserEntity(), $file);
+            $this->fileService->delete($file);
 
             return ApiResponse::success(
                 [],

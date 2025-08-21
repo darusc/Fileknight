@@ -75,4 +75,23 @@ class File
     {
         $this->size = $size;
     }
+
+    /**
+     * Gets the path in the virtual database tree-like structure.
+     * Path is relative to the user's root directory.
+     *
+     * This is not the real path inside the filesystem.
+     */
+    public function getPath(): string
+    {
+        return $this->directory->getPath() . '/' . $this->getName();
+    }
+
+    /**
+     * Gets the physical path (on disk).
+     */
+    public function getPhysicalPath(): string
+    {
+        return $this->getId();
+    }
 }
