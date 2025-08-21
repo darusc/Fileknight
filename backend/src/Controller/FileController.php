@@ -107,36 +107,6 @@ class FileController extends AbstractController
     }
 
     /**
-     * Download file
-     *
-     * ```
-     * GET /api/files/files/{id}/download
-     * ```
-     */
-    #[Route(path: '/files/{id}/download', name: 'api.files.download', methods: ['GET'])]
-    public function download(string $id): BinaryFileResponse|JsonResponse
-    {
-        try {
-            $file = $this->fileRepository->find(['id' => $id]);
-            FileService::assertFileExists($file);
-            AccessGuardService::assertFileAccess($file, $this->getUserEntity());
-
-            $path = FileService::getPhysicalPath($file);
-
-            $response = new BinaryFileResponse($path);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $file->getName());
-
-            return $response;
-        } catch (FileAccessDeniedException $exception) {
-            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
-        } catch(FileNotFoundException $exception) {
-            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_NOT_FOUND);
-        } catch (Exception $e) {
-            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
      * Update file - rename / move
      *
      * ```
