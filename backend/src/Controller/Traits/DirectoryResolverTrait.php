@@ -6,6 +6,7 @@ use Doctrine\ORM\NonUniqueResultException;
 use Fileknight\Entity\Directory;
 use Fileknight\Entity\User;
 use Fileknight\Exception\DirectoryNotFoundException;
+use Fileknight\Repository\DirectoryRepository;
 
 trait DirectoryResolverTrait
 {
@@ -19,12 +20,15 @@ trait DirectoryResolverTrait
      */
     private function resolveRequestDirectory(?string $id): Directory
     {
+        /** @var DirectoryRepository $directoryRepository */
+        $directoryRepository = $this->em->getRepository(Directory::class);
+
         if ($id === null) {
             /** @var User $user */
             $user = $this->getUser();
-            $directory = $this->directoryRepository->findRootByUser($user);
+            $directory = $directoryRepository->findRootByUser($user);
         } else {
-            $directory = $this->directoryRepository->findOneBy(['id' => $id]);
+            $directory = $directoryRepository->findOneBy(['id' => $id]);
         }
 
         if ($directory === null) {

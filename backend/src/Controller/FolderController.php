@@ -12,6 +12,7 @@ use Fileknight\Exception\DirectoryAccessDeniedException;
 use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Service\AccessGuardService;
 use Fileknight\Service\File\DirectoryService;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +21,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/files/folders')]
 #[IsGranted("ROLE_USER")]
-class FolderController
+class FolderController extends AbstractController
 {
     use DirectoryResolverTrait;
     use UserEntityGetterTrait;

@@ -2,6 +2,7 @@
 
 namespace Fileknight\Controller;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\Controller\Traits\DirectoryResolverTrait;
@@ -33,8 +34,9 @@ class FileController extends AbstractController
     use RequestJsonGetterTrait;
 
     public function __construct(
-        private readonly FileService         $fileService,
-        private readonly FileRepository      $fileRepository,
+        private readonly EntityManagerInterface $em,
+        private readonly FileService            $fileService,
+        private readonly FileRepository         $fileRepository,
     )
     {
     }
@@ -86,8 +88,10 @@ class FileController extends AbstractController
             return new JsonResponse(['error' => 'No file uploaded'], Response::HTTP_BAD_REQUEST);
         }
 
-        $name = $this->getJsonField($request, 'name');
-        $parentId = $this->getJsonField($request, 'parentId');
+//        $name = $this->getJsonField($request, 'name');
+//        $parentId = $this->getJsonField($request, 'parentId');
+        $name = $request->request->get('name');
+        $parentId = $request->request->get('parentId');
 
         try {
             $directory = $this->resolveRequestDirectory($parentId);
