@@ -8,7 +8,6 @@ use Fileknight\DTO\DirectoryDTO;
 use Fileknight\DTO\FileDTO;
 use Fileknight\Entity\Directory;
 use Fileknight\Entity\File;
-use Fileknight\Entity\User;
 use Fileknight\Exception\FileNotFoundException;
 use Fileknight\Repository\FileRepository;
 use Symfony\Component\Filesystem\Filesystem;
@@ -50,21 +49,13 @@ readonly class FileService
         $files = [];
         /** @var File $file */
         foreach ($directory->getFiles() as $file) {
-            $files[] = new FileDTO(
-                id: $file->getId(),
-                name: $file->getName(),
-                size: $file->getSize(),
-                type: $file->getType(),
-            );
+            $files[] = FileDto::fromEntity($file);
         }
 
         $directories = [];
         /** @var Directory $dir */
         foreach ($directory->getChildren() as $dir) {
-            $directories[] = new DirectoryDTO(
-                id: $dir->getId(),
-                name: $dir->getName(),
-            );
+            $directories[] = DirectoryDto::fromEntity($dir);
         }
 
         return new DirectoryContentDTO($files, $directories);
@@ -83,7 +74,7 @@ readonly class FileService
         $file = new File();
         $file->setName($originalFilename);
         $file->setDirectory($directory);
-        $file->setType($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
+        $file->setExtension($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
         $file->setSize($uploadedFile->getSize());
 
         $this->entityManager->persist($file);

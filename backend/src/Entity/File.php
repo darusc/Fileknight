@@ -3,12 +3,16 @@
 namespace Fileknight\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\FileRepository;
 use Ramsey\Uuid\Uuid;
 
 #[ORM\Entity(repositoryClass: FileRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class File
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "NONE")]
     #[ORM\Column(type: 'string', length: 32, unique: true)]
@@ -21,7 +25,7 @@ class File
     private string $name;
 
     #[ORM\Column(type: 'string', length: 15)]
-    private string $type;
+    private string $extension;
 
     #[ORM\Column(type: 'integer')]
     private int $size;
@@ -56,14 +60,14 @@ class File
         $this->name = $name;
     }
 
-    public function getType(): string
+    public function getExtension(): string
     {
-        return $this->type;
+        return $this->extension;
     }
 
-    public function setType(string $type): void
+    public function setExtension(string $extension): void
     {
-        $this->type = $type;
+        $this->extension = $extension;
     }
 
     public function getSize(): int

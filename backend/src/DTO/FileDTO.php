@@ -10,8 +10,10 @@ readonly class FileDTO implements JsonSerializable
     public function __construct(
         public string $id,
         public string $name,
-        public int $size,
-        public string $type,
+        public int    $size,
+        public string $extension,
+        public int    $createdAt,
+        public int    $updatedAt
     )
     {
     }
@@ -22,7 +24,9 @@ readonly class FileDTO implements JsonSerializable
             $file->getId(),
             $file->getName(),
             $file->getSize(),
-            $file->getType(),
+            $file->getExtension(),
+            $file->getCreatedAt()->getTimestamp(),
+            $file->getUpdatedAt()->getTimestamp()
         );
     }
 
@@ -37,7 +41,9 @@ readonly class FileDTO implements JsonSerializable
             'id' => $this->id,
             'name' => $this->name,
             'size' => $this->size,
-            'type' => $this->type,
+            'extension' => $this->extension,
+            'createdAt' => $this->createdAt,
+            'updatedAt' => $this->updatedAt
         ];
     }
 }
