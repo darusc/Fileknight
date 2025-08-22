@@ -82,7 +82,7 @@ class File
 
     /**
      * Gets the path in the virtual database tree-like structure.
-     * Path is relative to the user's root directory.
+     * Path is absolute starting at the user's root directory. (e.g. /grandparent/parent/file.txt)
      *
      * This is not the real path inside the filesystem.
      */
@@ -92,10 +92,13 @@ class File
     }
 
     /**
-     * Gets the physical path (on disk).
+     * Gets the path in the virtual database tree-like structure.
+     * Path is relative to the given ascendant.
+     * e.g. /f1/f2/f3/file.txt. If ascendant is f2 path will be f2/f3/file.txt
      */
-    public function getPhysicalPath(): string
+    public function getPathFromAscendant(Directory $ascendant): string
     {
-        return $this->getId();
+        echo 'get file path for file ' . $this->name . ' from ascendant ' . $ascendant->getName() . PHP_EOL;
+        return $this->directory->getPathFromAscendant($ascendant) . '/' . $this->getName();
     }
 }

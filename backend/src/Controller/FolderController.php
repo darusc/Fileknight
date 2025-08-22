@@ -2,6 +2,7 @@
 
 namespace Fileknight\Controller;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Fileknight\ApiResponse;
 use Fileknight\Controller\Traits\DirectoryResolverTrait;
@@ -28,8 +29,9 @@ class FolderController extends AbstractController
     use RequestJsonGetterTrait;
 
     public function __construct(
-        private readonly DirectoryService    $folderService,
-        private readonly DirectoryRepository $directoryRepository,
+        private readonly EntityManagerInterface $em,
+        private readonly DirectoryService       $folderService,
+        private readonly DirectoryRepository    $directoryRepository,
     )
     {
     }

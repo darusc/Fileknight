@@ -118,7 +118,7 @@ class Directory
 
     /**
      * Gets the path in the virtual database tree-like structure.
-     * Path is relative to the user's root directory.
+     * Path is absolute starting at the user's root directory.
      *
      * This is not the real path inside the filesystem (There are
      * no directories inside the filesystem, only the user's root
@@ -126,9 +126,29 @@ class Directory
      */
     public function getPath(): string
     {
+        if($this->parent === null && $this->owner !== null) {
+            return '';
+        }
+
         $path = [$this->name];
         $current = $this->parent;
-        while ($current !== null) {
+        while ($current !== null && $current->getParent() !== null) {
+            $path[] = $current->getName();
+            $current = $current->getParent();
+        }
+
+        return '/' . implode('/', array_reverse($path));
+    }
+
+    public function getPathFromAscendant(Directory $ascendant): string
+    {
+        if($ascendant->getParent() === null) {
+            return $this->getPath();
+        }
+
+        $path = [];
+        $current = $this;
+        while($current !== $ascendant->getParent()) {
             $path[] = $current->getName();
             $current = $current->getParent();
         }

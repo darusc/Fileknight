@@ -80,10 +80,10 @@ class DownloadController extends AbstractController
 
             // Get the path to the file to send as a binary stream
             // That path is either a zip archive or a single file
-            $dlpath = $this->downloadService->getDownloadPath($directories, $files);
+            [$dlpath, $dlname] = $this->downloadService->getDownloadPath($directories, $files);
 
             $response = new BinaryFileResponse($dlpath);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT);
+            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $dlname);
 
             // Delete the temporary zip archive after it was sent only in production mode
             // Keep it in debug mode for debugging (will require manual delete)
