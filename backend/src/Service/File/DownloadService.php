@@ -38,7 +38,6 @@ class DownloadService
             /** @var Directory $folder */
             foreach ($folders as $folder) {
                 // Parent is null. The zip archive will be the root and all folders added are its direct children
-                echo 'adding folder ' . $folder->getName() . "in root\n";
                 $this->addFolderToZip($zip, $folder, $folder);
             }
 
@@ -61,15 +60,18 @@ class DownloadService
     private function addFileToZipRoot(ZipArchive $zip, File $file): void
     {
         $path = FileService::getPhysicalPath($file);
-        $zip->addFile($path, $file->getName() . '.' . $file->getExtension());
+        $uniqueLocalPath = $this->getUniqueLocalPath($zip, $file->getName() . '.' . $file->getExtension());
+
+        $zip->addFile($path, $uniqueLocalPath);
     }
 
     private function addFileToZip(ZipArchive $zip, File $file, Directory $ascendant): void
     {
         $path = FileService::getPhysicalPath($file);
         $virtualPath = $file->getPathFromAscendant($ascendant);
-        echo 'added file ' . $virtualPath . " in directory " . $ascendant->getName() . PHP_EOL;
-        $zip->addFile($path, trim($virtualPath, '/') . '.' . $file->getExtension());
+        $uniqueLocalPath = $this->getUniqueLocalPath($zip, trim($virtualPath, '/') . '.' . $file->getExtension());
+
+        $zip->addFile($path, $uniqueLocalPath);
     }
 
     /**
@@ -79,14 +81,34 @@ class DownloadService
     {
         // Recurse over all the children of this directory and add them under current directory
         foreach ($directory->getChildren() as $child) {
-            echo 'adding folder ' . $child->getName() . " in " . $directory->getName() . "\n";
             $this->addFolderToZip($zip, $child, $ascendant);
         }
 
         // Add all the files contained in the directory
         foreach ($directory->getFiles() as $file) {
-            echo 'adding file ' . $file->getName() . " in " . $directory->getName() . "\n";
             $this->addFileToZip($zip, $file, $ascendant);
         }
+    }
+
+    /**
+     * Check if the given path already exists, if it does append an index.
+     * If file.txt already exists, return file(1).txt
+     */
+    private function getUniqueLocalPath(ZipArchive $zip, string $path): string
+    {
+        $counter = 1;
+        $localPath = $path;
+        while ($zip->locateName($localPath) !== false) {
+            // Split the path into path name and extension
+            $pos = strrpos($path, '.');
+            $name = substr($path, 0, $pos);
+            $ext = substr($path, $pos + 1);
+
+            // Build the local path containing the counter
+            $localPath = $name . "($counter)." . $ext;
+            $counter++;
+        }
+
+        return $localPath;
     }
 }

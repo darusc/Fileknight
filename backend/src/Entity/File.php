@@ -98,7 +98,6 @@ class File
      */
     public function getPathFromAscendant(Directory $ascendant): string
     {
-        echo 'get file path for file ' . $this->name . ' from ascendant ' . $ascendant->getName() . PHP_EOL;
         return $this->directory->getPathFromAscendant($ascendant) . '/' . $this->getName();
     }
 }
