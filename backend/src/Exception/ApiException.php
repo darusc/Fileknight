@@ -4,6 +4,9 @@ namespace Fileknight\Exception;
 
 use Exception;
 
+/**
+ * Base exception for all API endpoints
+ */
 class ApiException extends Exception
 {
     /**
@@ -16,7 +19,7 @@ class ApiException extends Exception
         private readonly string $errorCode,
         private readonly string $errorMessage,
         private readonly int $statusCode,
-        private array $details = []
+        private readonly array $details = []
     )
     {
         parent::__construct($this->errorMessage, $this->statusCode);

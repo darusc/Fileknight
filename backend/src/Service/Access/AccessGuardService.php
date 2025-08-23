@@ -1,13 +1,12 @@
 <?php
 
-namespace Fileknight\Service;
+namespace Fileknight\Service\Access;
 
 use Fileknight\Entity\Directory;
 use Fileknight\Entity\File;
 use Fileknight\Entity\User;
-use Fileknight\Exception\DirectoryAccessDeniedException;
-use Fileknight\Exception\FileAccessDeniedException;
-use Fileknight\Service\File\DirectoryService;
+use Fileknight\Service\Access\Exception\FolderAccessDeniedException;
+use Fileknight\Service\Access\Exception\FileAccessDeniedException;
 
 class AccessGuardService
 {
@@ -17,15 +16,14 @@ class AccessGuardService
 
     /**
      * Check if the user has access to the directory
-     * @throws DirectoryAccessDeniedException
+     * @throws FolderAccessDeniedException
      */
     public static function assertDirectoryAccess(Directory $directory, User $user): void
     {
         // Only the root directory has the owner
         $owner = $directory->getOwner() ?? $directory->getRoot()->getOwner();
-
         if ($owner !== $user) {
-            throw new DirectoryAccessDeniedException($directory->getId());
+            throw new FolderAccessDeniedException($directory);
         }
     }
 
