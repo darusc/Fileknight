@@ -80,7 +80,7 @@ class FolderController extends AbstractController
     #[Route('/{id}', name: 'api.files.folders.update', methods: ['PATCH'])]
     public function update(Request $request, string $id): JsonResponse
     {
-        $data = $this->requestResolverService->resolve($request, ['name', 'parentId']);
+        $data = $this->requestResolverService->resolve($request, [], ['name', 'parentId']);
 
         $directory = $this->folderService->get($id);
         AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());

@@ -90,7 +90,7 @@ class FileController extends AbstractController
      * Update file - rename / move
      *
      * ```
-     * POST /api/files/{id}
+     * PATCH /api/files/{id}
      * {
      *     parentId: (optional) The file's new parent folder. If null new parent is root
      *     name:     (optional) The file's new name

@@ -72,6 +72,10 @@ class RequestResolverService
             }
         }
 
+        // Normalize 'null' to null (this is done for ease of development
+        // as Postman sends only strings in multipart/form-data)
+        $requestData->normalize();
+
         return $requestData;
     }
 

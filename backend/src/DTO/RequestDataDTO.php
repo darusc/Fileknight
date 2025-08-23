@@ -29,4 +29,17 @@ class RequestDataDTO
     {
         return array_key_exists($name, $this->fields);
     }
+
+    /**
+     * Normalize all values according to the given normalization vector.
+     * By defaults normalizes 'null' to null
+     */
+    public function normalize(array $normalizationVector = ['null' => null]): void
+    {
+        foreach ($this->fields as $key => $value) {
+            if(is_scalar($value) && array_key_exists($value, $normalizationVector)) {
+                $this->fields[$key] = $normalizationVector[$value];
+            }
+        }
+    }
 }
