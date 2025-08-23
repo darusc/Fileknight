@@ -2,6 +2,7 @@
 
 namespace Fileknight\DTO;
 
+use Fileknight\Entity\File;
 use JsonSerializable;
 
 readonly class FileDTO implements JsonSerializable
@@ -9,10 +10,24 @@ readonly class FileDTO implements JsonSerializable
     public function __construct(
         public string $id,
         public string $name,
-        public int $size,
-        public string $type,
+        public int    $size,
+        public string $extension,
+        public int    $createdAt,
+        public int    $updatedAt
     )
     {
+    }
+
+    public static function fromEntity(File $file): self
+    {
+        return new self(
+            $file->getId(),
+            $file->getName(),
+            $file->getSize(),
+            $file->getExtension(),
+            $file->getCreatedAt()->getTimestamp(),
+            $file->getUpdatedAt()->getTimestamp()
+        );
     }
 
     public function jsonSerialize(): array
@@ -26,7 +41,9 @@ readonly class FileDTO implements JsonSerializable
             'id' => $this->id,
             'name' => $this->name,
             'size' => $this->size,
-            'type' => $this->type,
+            'extension' => $this->extension,
+            'createdAt' => $this->createdAt,
+            'updatedAt' => $this->updatedAt
         ];
     }
 }

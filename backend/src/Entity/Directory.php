@@ -5,12 +5,16 @@ namespace Fileknight\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\DirectoryRepository;
 use Ramsey\Uuid\Uuid;
 
 #[ORM\Entity(repositoryClass: DirectoryRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Directory
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'NONE')]
     #[ORM\Column(type: 'string', length: 32, unique: true)]
@@ -90,7 +94,7 @@ class Directory
      */
     public function setParent(Directory $parent): void
     {
-        if($this->owner === null) {
+        if ($this->owner === null) {
             $this->parent = $parent;
         }
     }
@@ -107,8 +111,60 @@ class Directory
      */
     public function setOwner(User $owner): void
     {
-        if($this->parent === null) {
+        if ($this->parent === null) {
             $this->owner = $owner;
         }
+    }
+
+    /**
+     * Gets the path in the virtual database tree-like structure.
+     * Path is absolute starting at the user's root directory.
+     *
+     * This is not the real path inside the filesystem (There are
+     * no directories inside the filesystem, only the user's root
+     * directory)
+     */
+    public function getPath(): string
+    {
+        if($this->parent === null && $this->owner !== null) {
+            return '';
+        }
+
+        $path = [$this->name];
+        $current = $this->parent;
+        while ($current !== null && $current->getParent() !== null) {
+            $path[] = $current->getName();
+            $current = $current->getParent();
+        }
+
+        return '/' . implode('/', array_reverse($path));
+    }
+
+    public function getPathFromAscendant(Directory $ascendant): string
+    {
+        if($ascendant->getParent() === null) {
+            return $this->getPath();
+        }
+
+        $path = [];
+        $current = $this;
+        while($current !== $ascendant->getParent()) {
+            $path[] = $current->getName();
+            $current = $current->getParent();
+        }
+
+        return implode('/', array_reverse($path));
+    }
+
+    /**
+     * Get the root. Root directory is the user directory on disk
+     */
+    public function getRoot(): Directory
+    {
+        $current = $this;
+        while ($current->getParent() !== null) {
+            $current = $current->getParent();
+        }
+        return $current;
     }
 }
