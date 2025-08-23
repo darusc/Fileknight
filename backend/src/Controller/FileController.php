@@ -90,7 +90,7 @@ class FileController extends AbstractController
      * Update file - rename / move
      *
      * ```
-     * POST /api/files/files/{id}
+     * POST /api/files/{id}
      * {
      *     parentId: (optional) The file's new parent folder. If null new parent is root
      *     name:     (optional) The file's new name
@@ -99,7 +99,7 @@ class FileController extends AbstractController
      * @throws ApiException
      * @throws NonUniqueResultException
      */
-    #[Route('/files/{id}', name: 'api.files.update', methods: ['PATCH'])]
+    #[Route('/{id}', name: 'api.files.update', methods: ['PATCH'])]
     public function update(Request $request, string $id): JsonResponse
     {
         $data = $this->requestResolverService->resolve($request, [], ['parentId', 'name']);
@@ -122,12 +122,12 @@ class FileController extends AbstractController
      *  Delete a file
      *
      * ```
-     * DELETE /api/files/files/{id}
+     * DELETE /api/files/{id}
      * ```
      * @throws FileAccessDeniedException
      * @throws FileNotFoundException
      */
-    #[Route('/files/{id}', name: 'api.files.delete', methods: ['DELETE'])]
+    #[Route('/{id}', name: 'api.files.delete', methods: ['DELETE'])]
     public function delete(string $id): JsonResponse
     {
         $file = $this->fileService->get($id);
