@@ -3,20 +3,20 @@
 namespace Fileknight\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
-use Fileknight\ApiResponse;
-use Fileknight\Controller\Traits\DirectoryResolverTrait;
-use Fileknight\Controller\Traits\RequestJsonGetterTrait;
+use Doctrine\ORM\NonUniqueResultException;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
 use Fileknight\DTO\DirectoryDTO;
-use Fileknight\Exception\DirectoryAccessDeniedException;
-use Fileknight\Repository\DirectoryRepository;
-use Fileknight\Service\AccessGuardService;
+use Fileknight\Exception\ApiException;
+use Fileknight\Response\ApiResponse;
+use Fileknight\Service\Access\AccessGuardService;
+use Fileknight\Service\Access\Exception\FolderAccessDeniedException;
 use Fileknight\Service\File\DirectoryService;
+use Fileknight\Service\File\Exception\FolderNotFoundException;
+use Fileknight\Service\Resolver\DirectoryResolverService;
+use Fileknight\Service\Resolver\Request\RequestResolverService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -24,54 +24,44 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted("ROLE_USER")]
 class FolderController extends AbstractController
 {
-    use DirectoryResolverTrait;
     use UserEntityGetterTrait;
-    use RequestJsonGetterTrait;
 
     public function __construct(
-        private readonly EntityManagerInterface $em,
-        private readonly DirectoryService       $folderService,
-        private readonly DirectoryRepository    $directoryRepository,
+        private readonly RequestResolverService   $requestResolverService,
+        private readonly DirectoryResolverService $directoryResolverService,
+        private readonly EntityManagerInterface   $em,
+        private readonly DirectoryService         $folderService,
     )
     {
     }
 
     /**
+     *  Creates a new folder.
+     *
      * ```
      * POST /api/files/folders
      * {
-     *      name: <name>,
-     *      parentId: {parentId}
+     *      name:     (required) Folder's name
+     *      parentId: (required) Folder's parent. If null create in root
      * }
      * ```
-     *
-     * Creates a new folder.
+     * @throws ApiException
+     * @throws NonUniqueResultException
      */
     #[Route(path: '', name: 'api.files.folders', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $parentId = $this->getJsonField($request, 'parentId');
-        $name = $this->getJsonField($request, 'name');
+        $data = $this->requestResolverService->resolve($request, ['name', 'parentId']);
 
-        if ($name === null) {
-            return ApiResponse::error([], 'Folder name is required', Response::HTTP_BAD_REQUEST);
-        }
+        $directory = $this->directoryResolverService->resolve($data->get('parentId'));
+        AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
-        try {
-            $directory = $this->resolveRequestDirectory($parentId);
-            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+        $created = $this->folderService->create($directory, $data->get('name'));
 
-            $created = $this->folderService->create($directory, $name);
-
-            return ApiResponse::success(
-                DirectoryDTO::fromEntity($created)->toArray(),
-                'Directory created successfully.',
-            );
-        } catch (DirectoryAccessDeniedException $exception) {
-            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
-        } catch (Exception $e) {
-            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        return ApiResponse::success(
+            DirectoryDTO::fromEntity($created)->toArray(),
+            'Directory created successfully.',
+        );
     }
 
     /**
@@ -80,66 +70,52 @@ class FolderController extends AbstractController
      * ```
      * PATCH /api/files/folders/{id}
      * {
-     *     parentId: {parentId} - The folder's new parent folder
-     *     name: {name} - The folder's new name
+     *     parentId: (optional) Folder's new parent folder. If null the new parent will be root
+     *     name:     (optional) Folder's new name
      * }
      * ```
+     * @throws ApiException
+     * @throws NonUniqueResultException
      */
     #[Route('/{id}', name: 'api.files.folders.update', methods: ['PATCH'])]
     public function update(Request $request, string $id): JsonResponse
     {
-        try {
-            $directory = $this->directoryRepository->find(['id' => $id]);
-            DirectoryService::assertDirectoryExists($directory);
-            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+        $data = $this->requestResolverService->resolve($request, ['name', 'parentId']);
 
-            $parentId = $this->getJsonField($request, 'parentId');
-            $name = $this->getJsonField($request, 'name');
+        $directory = $this->folderService->get($id);
+        AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
-            if ($name === null && $parentId === null) {
-                return ApiResponse::error([], 'Folder new name or new parent id is required.', Response::HTTP_BAD_REQUEST);
-            }
+        // If the parentId field is specified use it to get the new parent, otherwise make it null so the file is not moved
+        // Not using directly $data->get('parentId') !== null because get() returns null for nonexisting fields
+        $newParent = $data->exists('parentId') ?
+            $directory = $this->directoryResolverService->resolve($data->get('parentId')) :
+            null;
 
-            $newParent = null;
-            if ($parentId != null) {
-                $newParent = $this->resolveRequestDirectory($parentId);
-            }
+        $this->folderService->update($directory, $newParent, $data->get('name'));
 
-            $this->folderService->update($directory, $newParent, $name);
-
-            return ApiResponse::success(DirectoryDTO::fromEntity($directory)->toArray(), 'Folder updated successfully.');
-        } catch (DirectoryAccessDeniedException $exception) {
-            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
-        } catch (Exception $e) {
-            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        return ApiResponse::success(DirectoryDTO::fromEntity($directory)->toArray(), 'Folder updated successfully.');
     }
 
     /**
+     * Recursively delete a folder
+     *
      * ```
      * DELETE /api/files/folders/{id}
      * ```
-     *
-     * Recursively delete a folder
+     * @throws FolderAccessDeniedException
+     * @throws FolderNotFoundException
      */
     #[Route('/{id}', name: 'api.files.folders.delete', methods: ['DELETE'])]
     public function delete(string $id): JsonResponse
     {
-        try {
-            $directory = $this->directoryRepository->find(['id' => $id]);
-            DirectoryService::assertDirectoryExists($directory);
-            AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+        $directory = $this->folderService->get($id);
+        AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
-            $this->folderService->delete($directory);
+        $this->folderService->delete($directory);
 
-            return ApiResponse::success(
-                [],
-                "Folder $id deleted successfully.",
-            );
-        } catch (DirectoryAccessDeniedException $exception) {
-            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
-        } catch (Exception $e) {
-            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        return ApiResponse::success(
+            [],
+            "Folder $id deleted successfully.",
+        );
     }
 }

@@ -3,18 +3,14 @@
 namespace Fileknight\Controller;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Exception;
-use Fileknight\ApiResponse;
-use Fileknight\Controller\Traits\RequestJsonGetterTrait;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
-use Fileknight\Exception\FileAccessDeniedException;
-use Fileknight\Exception\FileNotFoundException;
-use Fileknight\Repository\DirectoryRepository;
-use Fileknight\Repository\FileRepository;
-use Fileknight\Service\AccessGuardService;
+use Fileknight\Exception\ApiException;
+use Fileknight\Response\ApiResponse;
+use Fileknight\Service\Access\AccessGuardService;
 use Fileknight\Service\File\DirectoryService;
 use Fileknight\Service\File\DownloadService;
 use Fileknight\Service\File\FileService;
+use Fileknight\Service\Resolver\Request\RequestResolverService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -27,12 +23,12 @@ use Symfony\Component\Routing\Attribute\Route;
 class DownloadController extends AbstractController
 {
     use UserEntityGetterTrait;
-    use RequestJsonGetterTrait;
 
     public function __construct(
-        private readonly DownloadService     $downloadService,
-        private readonly FileRepository      $fileRepository,
-        private readonly DirectoryRepository $directoryRepository,
+        private readonly RequestResolverService $requestResolverService,
+        private readonly DownloadService        $downloadService,
+        private readonly FileService            $fileService,
+        private readonly DirectoryService       $directoryService,
     )
     {
     }
@@ -43,61 +39,56 @@ class DownloadController extends AbstractController
      * ```
      * POST /api/files/download
      * {
-     *      "folderIds": [],
-     *      "fileIds": []
+     *      folderIds: (optional) Array containing the ids of the folders to download
+     *      fileIds:   (optional) Array containing the ids of the files to download
      * }
      * ```
+     * @throws ApiException
      */
     #[Route('', name: 'api.files.download', methods: ['POST'])]
     public function download(Request $request): BinaryFileResponse|JsonResponse
     {
-        try {
-            $fileIds = $this->getJsonField($request, 'fileIds');
-            $folderIds = $this->getJsonField($request, 'folderIds');
-            if (empty($fileIds) && empty($folderIds)) {
-                return ApiResponse::error([], 'No file or folder id provided', Response::HTTP_BAD_REQUEST);
-            }
+        $data = $this->requestResolverService->resolve($request, [], ['folderIds', 'fileIds']);
 
-            $files = new ArrayCollection();
-            if(!empty($fileIds)) {
-                foreach ($fileIds as $fileId) {
-                    $file = $this->fileRepository->find($fileId);
-                    FileService::assertFileExists($file);
-                    AccessGuardService::assertFileAccess($file, $this->getUserEntity());
-                    $files->add($file);
-                }
-            }
-
-            $directories = new ArrayCollection();
-            if(!empty($folderIds)) {
-                foreach ($folderIds as $folderId) {
-                    $directory = $this->directoryRepository->find($folderId);
-                    DirectoryService::assertDirectoryExists($directory);
-                    AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
-                    $directories->add($directory);
-                }
-            }
-
-            // Get the path to the file to send as a binary stream
-            // That path is either a zip archive or a single file
-            [$dlpath, $dlname] = $this->downloadService->getDownloadPath($directories, $files);
-
-            $response = new BinaryFileResponse($dlpath);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $dlname);
-
-            // Delete the temporary zip archive after it was sent only in production mode
-            // Keep it in debug mode for debugging (will require manual delete)
-            if($this->getParameter('kernel.environment') === 'prod') {
-                $response->deleteFileAfterSend(true);
-            }
-
-            return $response;
-        } catch (FileAccessDeniedException $exception) {
-            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_FORBIDDEN);
-        } catch (FileNotFoundException $exception) {
-            return ApiResponse::error([], $exception->getMessage(), Response::HTTP_NOT_FOUND);
-        } catch (Exception $e) {
-            return ApiResponse::error([], $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        if (empty($data->get('fileIds')) && empty($data->get('folderIds'))) {
+            return ApiResponse::error(
+                'NO_DOWNLOAD_TARGETS',
+                'At least one target (folder or file) must be specified',
+                Response::HTTP_BAD_REQUEST
+            );
         }
+
+        $files = new ArrayCollection();
+        if (!empty($data->get('fileIds'))) {
+            foreach ($data->get('fileIds') as $fileId) {
+                $file = $this->fileService->get($fileId);
+                AccessGuardService::assertFileAccess($file, $this->getUserEntity());
+                $files->add($file);
+            }
+        }
+
+        $directories = new ArrayCollection();
+        if (!empty($data->get('folderIds'))) {
+            foreach ($data->get('folderIds') as $folderId) {
+                $directory = $this->directoryService->get($folderId);
+                AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+                $directories->add($directory);
+            }
+        }
+
+        // Get the path to the file to send as a binary stream
+        // That path is either a zip archive or a single file
+        [$dlpath, $dlname] = $this->downloadService->getDownloadPath($directories, $files);
+
+        $response = new BinaryFileResponse($dlpath);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $dlname);
+
+        // Delete the temporary zip archive after it was sent only in production mode
+        // Keep it in debug mode for debugging (will require manual delete)
+        if ($this->getParameter('kernel.environment') === 'prod') {
+            $response->deleteFileAfterSend(true);
+        }
+
+        return $response;
     }
 }
