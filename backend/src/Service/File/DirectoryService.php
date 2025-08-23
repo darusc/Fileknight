@@ -4,10 +4,11 @@ namespace Fileknight\Service\File;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\Directory;
+use Fileknight\Entity\File;
 use Fileknight\Entity\User;
-use Fileknight\Exception\DirectoryNotFoundException;
 use Fileknight\Exception\UserDirCreationException;
 use Fileknight\Repository\DirectoryRepository;
+use Fileknight\Service\File\Exception\FolderNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -21,16 +22,6 @@ readonly class DirectoryService
         private FileSystem             $filesystem
     )
     {
-    }
-
-    /**
-     * @throws DirectoryNotFoundException
-     */
-    public static function assertDirectoryExists(?Directory $directory): void
-    {
-        if ($directory === null) {
-            throw new DirectoryNotFoundException();
-        }
     }
 
     /**
@@ -49,6 +40,22 @@ readonly class DirectoryService
     public static function getRootDirectoryPathFromDir(Directory $directory): string
     {
         return $_ENV['USER_STORAGE_PATH'] . '/' . $directory->getRoot()->getName();
+    }
+
+    /**
+     * Get the directory with the given id.
+     * @param string $id
+     * @return Directory
+     * @throws FolderNotFoundException
+     */
+    public function get(string $id): Directory
+    {
+        $directory = $this->directoryRepository->find($id);
+        if (!$directory) {
+            throw new FolderNotFoundException($id);
+        }
+
+        return $directory;
     }
 
     /**

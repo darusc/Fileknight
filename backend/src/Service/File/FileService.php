@@ -8,8 +8,8 @@ use Fileknight\DTO\DirectoryDTO;
 use Fileknight\DTO\FileDTO;
 use Fileknight\Entity\Directory;
 use Fileknight\Entity\File;
-use Fileknight\Exception\FileNotFoundException;
 use Fileknight\Repository\FileRepository;
+use Fileknight\Service\File\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -24,21 +24,27 @@ readonly class FileService
     }
 
     /**
-     * @throws FileNotFoundException
-     */
-    public static function assertFileExists(?File $file): void
-    {
-        if ($file === null) {
-            throw new FileNotFoundException();
-        }
-    }
-
-    /**
      * Get the real physical (on disk) path for a file
      */
     public static function getPhysicalPath(File $file): string
     {
         return DirectoryService::getRootDirectoryPathFromDir($file->getDirectory()) . '/' . $file->getId();
+    }
+
+    /**
+     * Get the file with the given id.
+     * @param string $id
+     * @return File
+     * @throws FileNotFoundException
+     */
+    public function get(string $id): File
+    {
+        $file = $this->fileRepository->find($id);
+        if (!$file) {
+            throw new FileNotFoundException($id);
+        }
+
+        return $file;
     }
 
     /**
