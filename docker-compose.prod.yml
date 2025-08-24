@@ -11,8 +11,22 @@ services:
         GID: ${GID:-1000}
     volumes:
       - ./backend:/srv/app
+      - ./backend/storage:/srv/storage
     environment:
       APP_ENV: prod
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
 
   frontend:
     image: node:20-alpine
@@ -34,3 +48,6 @@ services:
       - ./docker/caddy/Caddyfile.prod:/etc/caddy/Caddyfile
     depends_on:
       - php
+
+volumes:
+  db_data:
