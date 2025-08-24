@@ -1,3 +1,7 @@
+parameters:
+    admin_user: '%env(ADMIN_USER)%'
+    admin_password: '%env(ADMIN_PASSWORD)%'
+
 security:
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
@@ -10,6 +14,13 @@ security:
             entity:
                 class: Fileknight\Entity\User
                 property: username
+
+        admin_provider:
+            memory:
+                users:
+                    '%admin_user%':
+                        password: '%admin_password%'
+                        roles: ['ROLE_ADMIN']
 
     firewalls:
         dev:
@@ -36,6 +47,21 @@ security:
             stateless: true
             jwt: ~
 
+        admin:
+            lazy: true
+            provider: admin_provider
+            pattern: ^/admin
+            form_login:
+                login_path: admin.login
+                check_path: admin.login
+                enable_csrf: true
+                csrf_parameter: _csrf_token
+                csrf_token_id: authenticate
+                default_target_path: /admin/
+            logout:
+                path: admin.logout
+                target: /admin/login
+
         main:
             lazy: true
             provider: users_in_memory
@@ -49,8 +75,9 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_ADMIN }
+
         - { path: ^/api/login, roles: PUBLIC_ACCESS  }
         - { path: ^/api/register, roles: PUBLIC_ACCESS  }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
