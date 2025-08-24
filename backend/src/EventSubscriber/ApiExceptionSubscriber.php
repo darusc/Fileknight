@@ -21,6 +21,11 @@ class ApiExceptionSubscriber implements EventSubscriberInterface
 
     public function onKernelException(ExceptionEvent $event): void
     {
+        // This event subscriber is only for /api paths
+        if(!str_starts_with($event->getRequest()->getPathInfo(), '/api')) {
+            return;
+        }
+
         $exception = $event->getThrowable();
 
         if ($exception instanceof ApiException) {
