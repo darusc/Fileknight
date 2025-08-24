@@ -61,27 +61,22 @@ readonly class DirectoryService
     /**
      * Creates a new root user directory env('USER_STORAGE_PATH')/{userId} if it doesn't already exist.
      * If it already exists do nothing
-     * @throws UserDirCreationException
+     * @throws IOException
      */
     public function createRoot(User $user): void
     {
         if (!$this->rootDirectoryExists($user)) {
             $path = static::getRootDirectoryPathFromUser($user);
-            try {
-                // Create the physical directory
-                $this->filesystem->mkdir($path, 0775);
+            // Create the physical directory
+            $this->filesystem->mkdir($path, 0775);
 
-                // Create the database entry mapping the physical directory
-                $rootDirectory = new Directory();
-                $rootDirectory->setName($user->getUserIdentifier());
-                $rootDirectory->setOwner($user);
+            // Create the database entry mapping the physical directory
+            $rootDirectory = new Directory();
+            $rootDirectory->setName($user->getUserIdentifier());
+            $rootDirectory->setOwner($user);
 
-                $this->entityManager->persist($rootDirectory);
-                $this->entityManager->flush();
-
-            } catch (IOException $e) {
-                throw new UserDirCreationException($user->getUserIdentifier(), $e->getMessage());
-            }
+            $this->entityManager->persist($rootDirectory);
+            $this->entityManager->flush();
         }
     }
 

@@ -2,15 +2,22 @@
 
 namespace Fileknight\Entity;
 
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
+use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\UserRepository;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
+    use TimestampTrait;
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private int $id;
 
     #[ORM\Column(type: 'string', length: 255, unique: true)]
@@ -19,8 +26,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
-    #[ORM\Column(type: 'string')]
-    private string $password;
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $password = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $resetToken = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $resetTokenExp = null;
 
     public function getRoles(): array
     {
@@ -44,6 +57,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
+    public function getUsername(): string
+    {
+        return $this->username;
+    }
+
     public function setUsername(string $username): void
     {
         $this->username = $username;
@@ -59,8 +77,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->password = $password;
     }
 
-    public function __toString(): string
+    public function getResetToken(): string
     {
-        return "$this->id $this->username $this->password";
+        return $this->resetToken;
+    }
+
+    /**
+     * @param string $resetToken The hashed reset token
+     * @param int $lifetime Token will expire after given seconds
+     * @return void
+     */
+    public function setResetToken(string $resetToken, int $lifetime): void
+    {
+        $this->resetToken = $resetToken;
+        $this->resetTokenExp = time() + $lifetime;
+    }
+
+    /**
+     * Gets the time as a unix timestamp when the reset token expires
+     */
+    public function getResetTokenExp(): int
+    {
+        return $this->resetTokenExp;
     }
 }
