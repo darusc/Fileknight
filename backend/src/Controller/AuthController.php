@@ -3,12 +3,16 @@
 namespace Fileknight\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
+use Fileknight\DTO\UserDTO;
 use Fileknight\Entity\User;
-use Fileknight\Service\UserService;
+use Fileknight\Exception\ApiException;
+use Fileknight\Response\ApiResponse;
+use Fileknight\Service\Resolver\Request\RequestResolverService;
+use Fileknight\Service\User\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/auth')]
@@ -16,52 +20,39 @@ class AuthController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly UserService $userService,
+        private readonly UserService            $userService,
+        private readonly RequestResolverService $requestResolverService
     )
     {
     }
 
+    /**
+     * Register new user. This is used for finishing the registration process.
+     * The user entity is created by the server's admin, this api just sets
+     * finished registration (sets the password) using the received token
+     *
+     * ```
+     * POST /api/auth/register
+     * {
+     *      username: (required) User's unique username
+     *      password: (required) User's password
+     *      registrationToken: (required) Token used for registration. Received from server admin
+     * }
+     * ```
+     * @throws ApiException
+     */
     #[Route(path: '/register', name: 'auth.register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
+        $data = $this->requestResolverService->resolve($request, ['username', 'registrationToken', 'password']);
 
-        $username = $data['username'] ?? null;
-        $password = $data['password'] ?? null;
+        $user = $this->userService->getUser($data->get('username'));
+        $this->userService->register($user, $data->get('password'), $data->get('registrationToken'));
 
-        if ($username === null || $password === null) {
-            return new JsonResponse(['error' => 'Username and password required.'], 400);
-        }
-
-        try {
-            $this->userService->register($username, $password);
-
-            return new JsonResponse(['success' => 'User successfully registered.'], 201);
-        } catch (Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], 409);
-        }
-    }
-
-    #[Route(path: '/delete', name: 'auth.delete', methods: ['DELETE'])]
-    public function delete(Request $request): JsonResponse
-    {
-        $username = json_decode($request->getContent(), true)['username'] ?? null;
-        if ($username === null) {
-            return new JsonResponse(['error' => 'Username is required.'], 400);
-        }
-
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
-        $this->userService->delete($user);
-
-        return new JsonResponse(['success' => 'User successfully deleted.'], 201);
-    }
-
-    #[Route(path: '/list', name: 'auth.list', methods: ['GET'], condition: "env('APP_ENV') == 'dev'")]
-    public function list(): JsonResponse
-    {
-        $users = $this->entityManager->getRepository(User::class)->findAll();
-        $res = array_map(fn($user) => (string)$user, $users);
-
-        return new JsonResponse(['users' => $res]);
+        return ApiResponse::success(
+            UserDTO::fromEntity($user)->toArray(),
+            'User successfully registered.',
+            Response::HTTP_CREATED
+        );
     }
 }
