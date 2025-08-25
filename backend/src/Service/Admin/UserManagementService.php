@@ -4,15 +4,11 @@ namespace Fileknight\Service\Admin;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\User;
-use Fileknight\Exception\UserAlreadyExists;
-use Fileknight\Exception\UserDirCreationException;
-use Fileknight\Repository\UserRepository;
 use Fileknight\Service\Admin\Exception\UserCreationFailedException;
 use Fileknight\Service\File\DirectoryService;
 use Ramsey\Uuid\Generator\RandomBytesGenerator;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Exception\IOException;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Admin service for managing users
