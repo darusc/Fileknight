@@ -3,22 +3,39 @@
 
 {# ... #}
 
+{% block title %}Fileknight Admin Login{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('/assets/css/admin_login.css') }}">
+{% endblock %}
+
 {% block body %}
-    {% if error %}
-        <div>{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-    {% endif %}
+    <section class="admin_login">
+        <img src="{{ asset('/assets/image/logo.png') }}" alt="Admin Logo" class="login-logo">
 
-    <form action="{{ path('admin.login') }}" method="post">
-        <label for="username">Email:</label>
-        <input type="text" id="username" name="_username" value="{{ last_username }}" required>
+        <form action="{{ path('admin.login') }}" method="post" class="login-card">
+            <h2 class="login-title">Admin Login</h2>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="_password" required>
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            {% if error %}
+                <div class="login-error">
+                    {{ error.messageKey|trans(error.messageData, 'security') }}
+                </div>
+            {% endif %}
 
-        {# If you want to control the URL the user is redirected to on success
-        <input type="hidden" name="_target_path" value="/account"> #}
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="_username" value="{{ last_username }}" required>
+            </div>
 
-        <button type="submit">login</button>
-    </form>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="_password" required>
+            </div>
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <button type="submit" class="login-button">Login</button>
+        </form>
+    </section>
 {% endblock %}
