@@ -25,7 +25,9 @@ class CreateUserCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('username', InputArgument::REQUIRED, 'Username must be unique');
+        $this
+            ->addArgument('username', InputArgument::REQUIRED, 'Username must be unique')
+            ->addArgument('email', InputArgument::REQUIRED, 'User email address');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -33,7 +35,8 @@ class CreateUserCommand extends Command
         $io = new SymfonyStyle($input, $output);
         try {
             $username = $input->getArgument('username');
-            [$token, $lifetime] = $this->userManager->create($username);
+            $email = $input->getArgument('email');
+            [$token, $lifetime] = $this->userManager->create($username, $email);
 
             $io->block(
                 "User $username created.\nToken: $token, valid for $lifetime seconds",
