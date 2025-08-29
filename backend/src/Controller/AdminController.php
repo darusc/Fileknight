@@ -4,12 +4,19 @@ namespace Fileknight\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\User;
+use Fileknight\Form\UserType;
 use Fileknight\Repository\UserRepository;
 use Fileknight\Service\Admin\DiskStatisticsService;
+use Fileknight\Service\Admin\Exception\UserCreationFailedException;
 use Fileknight\Service\Admin\ServerInfoService;
+use Fileknight\Service\Admin\UserManagementService;
 use Fileknight\Service\MailService;
 use Symfony\Bridge\Twig\Attribute\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
@@ -23,7 +30,8 @@ class AdminController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly DiskStatisticsService  $diskUtilityService,
-        private readonly ServerInfoService      $serverInfoService
+        private readonly ServerInfoService      $serverInfoService,
+        private readonly UserManagementService  $userManagementService,
     )
     {
     }
@@ -94,6 +102,39 @@ class AdminController extends AbstractController
                 'db' => $dbInfo
             ]
         ];
+    }
+
+    #[Route('/create-user', name: 'admin_create_user')]
+    public function createUser(Request $request): Response
+    {
+        // Create a form to handle the request that has a username and email
+        $form = $this->createFormBuilder()
+            ->add('username', TextType::class)
+            ->add('email', EmailType::class)
+            ->getForm();
+        $form->handleRequest($request);
+
+        $error = null;
+        $token = null;
+        $lifetime = null;
+        if ($form->isSubmitted()) {
+            $data = $form->getData();
+            try {
+                [$token, $lifetime] = $this->userManagementService->create($data['username'], $data['email']);
+            } catch (UserCreationFailedException $e) {
+                $error = $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/create_user.html.twig', [
+            'form' => $form->createView(),
+            'error' => $error,
+            'userCreated' => $form->isSubmitted() && $error === null,
+            'newUser' => [
+                'token' => $token,
+                'expiration' => $lifetime,
+            ]
+        ]);
     }
 
     #[Route('/logout', name: 'admin.logout')]
