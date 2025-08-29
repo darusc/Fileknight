@@ -354,3 +354,51 @@ h2 {
     color: #d4d4d4;
     font-weight: 400;
 }
+
+
+.user-info {
+    margin: 0.5rem;
+}
+
+.user-info-close {
+    float: right;
+    cursor: pointer;
+}
+
+.user-info .copy-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.user-info .copy-btn:hover {
+    color: #d4d4d4;
+}
+
+.success {
+    background: #1e3a2a;
+    color: #fff;
+    padding: 0.85rem 1rem;
+    border-left: 4px solid #10b981;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    text-align: left; /* align text left for readability */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.user-info span.bold {
+    font-weight: bold;
+}
+
+.error {
+    background: #dc2626; /* bright red for visibility */
+    color: #fff;
+    padding: 0.85rem 1rem;
+    border-left: 4px solid #b91c1c; /* accent line for emphasis */
+    border-radius: 8px;
+    font-size: 0.95rem;
+    text-align: left; /* align text left for readability */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    animation: shake 0.3s ease; /* subtle attention animation */
+}

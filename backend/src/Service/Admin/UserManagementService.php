@@ -5,6 +5,7 @@ namespace Fileknight\Service\Admin;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\User;
 use Fileknight\Service\Admin\Exception\UserCreationFailedException;
+use Fileknight\Service\Admin\Exception\UserResetFailedException;
 use Fileknight\Service\File\DirectoryService;
 use Ramsey\Uuid\Generator\RandomBytesGenerator;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -82,6 +83,28 @@ readonly class UserManagementService
             $this->delete($user);
             throw new UserCreationFailedException($exception->getMessage());
         }
+
+        return [$token, $this->createTokenLifetime];
+    }
+
+    /**
+     * Resets the user's token.
+     * @return array Contains the new token and its lifetime, [$token, $lifetime]
+     *
+     * @throws UserResetFailedException
+     */
+    public function reset(User $user): array
+    {
+        // Generate a new token and hash it
+        $token = self::generateSecureToken();
+        $hashedToken = password_hash($token, PASSWORD_DEFAULT);
+        if (!$hashedToken) {
+            throw new UserResetFailedException($user->getUsername(), "Error hashing the token.");
+        }
+
+        // Set the new created token and its lifetime
+        $user->setResetToken($hashedToken, $this->resetTokenLifetime);
+        $this->entityManager->flush();
 
         return [$token, $this->createTokenLifetime];
     }

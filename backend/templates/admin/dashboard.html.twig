@@ -33,29 +33,7 @@
                     </div>
 
                     <script>
-                        document.addEventListener("DOMContentLoaded", () => {
-                            const now = new Date();
-                            const offset = -now.getTimezoneOffset() / 60; // offset in hours
-                            const sign = offset >= 0 ? '+' : '-';
-                            const gmt = '(GMT' + sign + Math.abs(offset) + ')';
-                            document.getElementById("browser-timezone").textContent = gmt;
-                        });
 
-                        function updateClocks() {
-                            const now = new Date();
-
-                            // Server time
-                            const serverTz = "{{ serverTimezone }}";
-                            const server = now.toLocaleTimeString('en-GB', { hour12: false, timeZone: serverTz });
-                            document.getElementById('clock-server').textContent = server;
-
-                            // Browser local time
-                            const browser = now.toLocaleTimeString('en-GB', { hour12: false });
-                            document.getElementById('clock-browser').textContent = browser;
-                        }
-
-                        setInterval(updateClocks, 1000);
-                        updateClocks();
                     </script>
                 </div>
             </div>
@@ -98,8 +76,13 @@
         <div id="users" class="json-users">
             <h2>User management</h2>
             <div class="json-actions create-user">
-                <a href="" class="btn create">+ Create New User</a>
+                <a href="{{ path('admin_create_user') }}" class="btn create">+ Create New User</a>
             </div>
+
+            {% set success = app.flashes('reset_success') %}
+            {% set userId = app.flashes('reset_id')|first %}
+            {% set token = app.flashes('reset_token')|first %}
+            {% set expires = app.flashes('reset_expires')|first %}
             {% for user in users %}
                 <div class="json-user">
                     <!-- Preview (username only) -->
@@ -119,6 +102,30 @@
                         {% endif %}
                         <span class="p"> ... }</span>
                     </div>
+
+                    {% if success is not empty and userId == user.id %}
+                        <div class="user-info success">
+                            <div class="title">
+                                User token reset successful!
+                                <span class="user-info-close copy-btn" onclick="closeUserInfo()"><i class="fa-solid fa-xmark"></i></span>
+                            </div>
+                            <span class="bold">Token: </span>
+                            <span>{{ token }}</span>
+                            <span class="copy-btn" title="Copy token" onclick="copyToken({{ token }})"><i
+                                    class="fa-regular fa-copy"></i></span>,
+                            <span class="bold">Valid for:</span>
+                            <span>{{ expires }} seconds</span>
+                        </div>
+                    {% endif %}
+                    {% if app.flashes('reset_error') is not empty %}
+                        <div class="user-info error">
+                            <div class="title">
+                                User token reset failed!
+                                <span class="user-info-close copy-btn" onclick="closeUserInfo()"><i class="fa-solid fa-xmark"></i></span>
+                            </div>
+                            <span>{{ app.flashes('reset_error')|first }}</span>
+                        </div>
+                    {% endif %}
 
                     <!-- Hidden details -->
                     <div class="json-details">
@@ -146,18 +153,18 @@
                             <span class="v string">{{ user.updatedAt|date('Y-m-d H:i') }}</span><span class="p">,</span>
                         </div>
 
-                        <div class="json-line indent">
-                            <span class="k">"reset_token"</span><span class="p">: </span>
-                            {% if user.resetToken %}
-                                <span class="v string" id="token-{{ user.id }}">{{ user.resetToken|e }}</span>
-                                <span class="copy-btn" onclick="copyToken('token-{{ user.id }}', event)">
-                                    <i class="fa-solid fa-copy"></i>
-                                </span>
-                                <span class="p">,</span>
-                            {% else %}
-                                <span class="v null">null</span><span class="p">,</span>
-                            {% endif %}
-                        </div>
+{#                        <div class="json-line indent">#}
+{#                            <span class="k">"reset_token"</span><span class="p">: </span>#}
+{#                            {% if user.resetToken %}#}
+{#                                <span class="v string" id="token-{{ user.id }}">{{ user.resetToken|e }}</span>#}
+{#                                <span class="copy-btn" onclick="copyToken('token-{{ user.id }}', event)">#}
+{#                                    <i class="fa-solid fa-copy"></i>#}
+{#                                </span>#}
+{#                                <span class="p">,</span>#}
+{#                            {% else %}#}
+{#                                <span class="v null">null</span><span class="p">,</span>#}
+{#                            {% endif %}#}
+{#                        </div>#}
 
                         <div class="json-line indent">
                             <span class="k">"reset_token_expires_at"</span><span class="p">: </span>
@@ -177,8 +184,8 @@
                             <form method="post" onsubmit="return confirm('Delete this user?');">
                                 <button type="submit" class="btn delete">Delete</button>
                             </form>
-                            <form method="post">
-                                <button type="submit" class="btn reset">Reset Password</button>
+                            <form method="post" action="{{ path('admin_reset_user', {id: user.id}) }}">
+                                <button type="submit" class="btn reset">Generate new token</button>
                             </form>
                         </div>
                     </div>
@@ -186,16 +193,6 @@
             {% else %}
                 <div class="json-empty">No users found.</div>
             {% endfor %}
-
-            <script>
-                function copyToken(elementId, event) {
-                    event.stopPropagation(); // prevent opening the dropdown
-                    const token = document.getElementById(elementId).textContent;
-                    navigator.clipboard.writeText(token).then(() => {
-                        alert('Token copied to clipboard!');
-                    });
-                }
-            </script>
         </div>
 
 
@@ -302,4 +299,44 @@
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const now = new Date();
+            const offset = -now.getTimezoneOffset() / 60; // offset in hours
+            const sign = offset >= 0 ? '+' : '-';
+            const gmt = '(GMT' + sign + Math.abs(offset) + ')';
+            document.getElementById("browser-timezone").textContent = gmt;
+        });
+
+        function updateClocks() {
+            const now = new Date();
+
+            // Server time
+            const serverTz = "{{ serverTimezone }}";
+            const server = now.toLocaleTimeString('en-GB', {hour12: false, timeZone: serverTz});
+            document.getElementById('clock-server').textContent = server;
+
+            // Browser local time
+            const browser = now.toLocaleTimeString('en-GB', {hour12: false});
+            document.getElementById('clock-browser').textContent = browser;
+        }
+
+        setInterval(updateClocks, 1000);
+        updateClocks();
+
+        function copyToken(elementId, event) {
+            event.stopPropagation(); // prevent opening the dropdown
+            const token = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(token).then(() => {
+                alert('Token copied to clipboard!');
+            });
+        }
+
+        function closeUserInfo() {
+            document.querySelector(".user-info").style.display = "none";
+        }
+    </script>
 {% endblock %}

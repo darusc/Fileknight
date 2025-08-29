@@ -8,6 +8,7 @@ use Fileknight\Form\UserType;
 use Fileknight\Repository\UserRepository;
 use Fileknight\Service\Admin\DiskStatisticsService;
 use Fileknight\Service\Admin\Exception\UserCreationFailedException;
+use Fileknight\Service\Admin\Exception\UserResetFailedException;
 use Fileknight\Service\Admin\ServerInfoService;
 use Fileknight\Service\Admin\UserManagementService;
 use Fileknight\Service\MailService;
@@ -104,7 +105,7 @@ class AdminController extends AbstractController
         ];
     }
 
-    #[Route('/create-user', name: 'admin_create_user')]
+    #[Route('/user/create', name: 'admin_create_user')]
     public function createUser(Request $request): Response
     {
         // Create a form to handle the request that has a username and email
@@ -135,6 +136,30 @@ class AdminController extends AbstractController
                 'expiration' => $lifetime,
             ]
         ]);
+    }
+
+    #[Route('/user/{id}/reset', name: 'admin_reset_user', methods: ['POST'])]
+    public function resetUser(Request $request, string $id): Response
+    {
+        $user = $this->entityManager->getRepository(User::class)->find($id);
+        try {
+            [$token, $lifetime] = $this->userManagementService->reset($user);
+
+            $this->addFlash('reset_success', true);
+            $this->addFlash('reset_token', $token);
+            $this->addFlash('reset_id', $user->getId());
+            $this->addFlash('reset_expires', $lifetime);
+        } catch (UserResetFailedException $e) {
+            $this->addFlash('reset_error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_dashboard');
+    }
+
+    #[Route('/user/{id}/delete', name: 'admin_delete_user', methods: ['POST'])]
+    public function deleteUser(Request $request, string $id): Response
+    {
+
     }
 
     #[Route('/logout', name: 'admin.logout')]
