@@ -4,15 +4,12 @@ namespace Fileknight\Service\Admin;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\User;
-use Fileknight\Exception\UserAlreadyExists;
-use Fileknight\Exception\UserDirCreationException;
-use Fileknight\Repository\UserRepository;
 use Fileknight\Service\Admin\Exception\UserCreationFailedException;
+use Fileknight\Service\Admin\Exception\UserResetFailedException;
 use Fileknight\Service\File\DirectoryService;
 use Ramsey\Uuid\Generator\RandomBytesGenerator;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Exception\IOException;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Admin service for managing users
@@ -51,10 +48,11 @@ readonly class UserManagementService
      * is also created now.
      *
      * @param string $username
+     * @param string|null $email
      * @return array Contains [0] the token the user needs for final registration (setting his password) and [1] its lifetime
      * @throws UserCreationFailedException
      */
-    public function create(string $username): array
+    public function create(string $username, ?string $email): array
     {
         if ($this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]) !== null) {
             throw new UserCreationFailedException("User $username already exists.");
@@ -72,6 +70,7 @@ readonly class UserManagementService
         }
 
         $user->setUsername($username);
+        $user->setEmail($email);
         $user->setResetToken($hashedToken, $this->createTokenLifetime);
 
         $this->entityManager->persist($user);
@@ -84,6 +83,28 @@ readonly class UserManagementService
             $this->delete($user);
             throw new UserCreationFailedException($exception->getMessage());
         }
+
+        return [$token, $this->createTokenLifetime];
+    }
+
+    /**
+     * Resets the user's token.
+     * @return array Contains the new token and its lifetime, [$token, $lifetime]
+     *
+     * @throws UserResetFailedException
+     */
+    public function reset(User $user): array
+    {
+        // Generate a new token and hash it
+        $token = self::generateSecureToken();
+        $hashedToken = password_hash($token, PASSWORD_DEFAULT);
+        if (!$hashedToken) {
+            throw new UserResetFailedException($user->getUsername(), "Error hashing the token.");
+        }
+
+        // Set the new created token and its lifetime
+        $user->setResetToken($hashedToken, $this->resetTokenLifetime);
+        $this->entityManager->flush();
 
         return [$token, $this->createTokenLifetime];
     }

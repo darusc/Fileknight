@@ -2,6 +2,9 @@
 
 namespace Fileknight\Command;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Fileknight\Entity\User;
+use Fileknight\Service\Admin\Exception\UserResetFailedException;
 use Fileknight\Service\Admin\UserManagementService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -11,23 +14,22 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'admin:create-user',
-    description: 'Create a new user',
+    name: 'admin:reset-user',
+    description: "Resets a user's token",
 )]
-class CreateUserCommand extends Command
+class ResetUserCommand extends Command
 {
     public function __construct(
-        private readonly UserManagementService $userManager
+        private readonly EntityManagerInterface $entityManager,
+        private readonly UserManagementService  $userManager
     )
     {
-        parent::__construct('create-user');
+        parent::__construct('reset-user');
     }
 
     protected function configure(): void
     {
-        $this
-            ->addArgument('username', InputArgument::REQUIRED, 'Username must be unique')
-            ->addArgument('email', InputArgument::REQUIRED, 'User email address');
+        $this->addArgument('username', InputArgument::REQUIRED, 'Username must be unique');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -35,11 +37,15 @@ class CreateUserCommand extends Command
         $io = new SymfonyStyle($input, $output);
         try {
             $username = $input->getArgument('username');
-            $email = $input->getArgument('email');
-            [$token, $lifetime] = $this->userManager->create($username, $email);
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
+            if ($user === null) {
+                throw new UserResetFailedException($username, "User not found.");
+            }
+
+            [$token, $lifetime] = $this->userManager->reset($user);
 
             $io->block(
-                "User $username created.\nToken: $token, valid for $lifetime seconds",
+                "User $username's token reset.\nNew token: $token, valid for $lifetime seconds",
                 null,
                 'fg=white;bg=green;',
                 ' ',
@@ -48,7 +54,7 @@ class CreateUserCommand extends Command
             return self::SUCCESS;
         } catch (\Exception $e) {
             $io->block(
-                "User creation failed.\nError: {$e->getMessage()}",
+                "User reset failed.\nError: {$e->getMessage()}",
                 null,
                 'fg=white;bg=red;',
                 ' ',

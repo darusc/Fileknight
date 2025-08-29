@@ -4,9 +4,7 @@ namespace Fileknight\Service\File;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\Directory;
-use Fileknight\Entity\File;
 use Fileknight\Entity\User;
-use Fileknight\Exception\UserDirCreationException;
 use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Service\File\Exception\FolderNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
