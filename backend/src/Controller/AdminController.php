@@ -159,7 +159,10 @@ class AdminController extends AbstractController
     #[Route('/user/{id}/delete', name: 'admin_delete_user', methods: ['POST'])]
     public function deleteUser(Request $request, string $id): Response
     {
+        $user = $this->entityManager->getRepository(User::class)->find($id);
+        $this->userManagementService->delete($user);
 
+        return $this->redirectToRoute('admin_dashboard');
     }
 
     #[Route('/logout', name: 'admin.logout')]

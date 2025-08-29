@@ -181,7 +181,7 @@
 
                         <!-- Actions -->
                         <div class="json-actions">
-                            <form method="post" onsubmit="return confirm('Delete this user?');">
+                            <form method="post" action="{{ path('admin_delete_user', {id: user.id}) }}" onsubmit="return confirm('Are you sure you want to delete this user? All files will be permanently deleted.');">
                                 <button type="submit" class="btn delete">Delete</button>
                             </form>
                             <form method="post" action="{{ path('admin_reset_user', {id: user.id}) }}">
