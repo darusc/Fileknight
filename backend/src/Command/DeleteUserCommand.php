@@ -49,7 +49,7 @@ class DeleteUserCommand extends Command
         }
 
         // Before deleting the user prompt a confirmation message
-        if(!$io->confirm("Are you sure you want to delete user $username? All user files will be deleted, action is not reversible")) {
+        if (!$io->confirm("Are you sure you want to delete user $username? All user files will be deleted, action is not reversible")) {
             $io->warning("Operation cancelled.");
             return self::SUCCESS;
         }

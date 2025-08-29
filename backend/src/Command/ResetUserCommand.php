@@ -21,7 +21,7 @@ class ResetUserCommand extends Command
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly UserManagementService $userManager
+        private readonly UserManagementService  $userManager
     )
     {
         parent::__construct('reset-user');

@@ -4,21 +4,18 @@ namespace Fileknight\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\User;
-use Fileknight\Form\UserType;
 use Fileknight\Repository\UserRepository;
 use Fileknight\Service\Admin\DiskStatisticsService;
 use Fileknight\Service\Admin\Exception\UserCreationFailedException;
 use Fileknight\Service\Admin\Exception\UserResetFailedException;
 use Fileknight\Service\Admin\ServerInfoService;
 use Fileknight\Service\Admin\UserManagementService;
-use Fileknight\Service\MailService;
 use Symfony\Bridge\Twig\Attribute\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
