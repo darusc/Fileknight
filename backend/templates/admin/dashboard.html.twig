@@ -277,7 +277,10 @@
                 <div class="server-column">
                     <div class="server-info-item">
                         <span class="label">Database:</span>
-                        <span class="value">{{ server.db.name }} {{ server.db.version }}</span>
+                        <span class="value">
+                            {{ server.db.name }} {{ server.db.version }}
+                            <a href="http://localhost:8080" style="color: #D3D3D3">→ phpMyAdmin</a>
+                        </span>
                     </div>
                     <div class="server-info-item">
                         <span class="label">Disk Usage:</span>
