@@ -103,6 +103,7 @@ readonly class UserManagementService
         }
 
         // Set the new created token and its lifetime
+        $user->setResetRequired(false);
         $user->setResetToken($hashedToken, $this->resetTokenLifetime);
         $this->entityManager->flush();
 

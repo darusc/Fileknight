@@ -20,7 +20,7 @@ security:
                 users:
                     '%admin_user%':
                         password: '%admin_password%'
-                        roles: ['ROLE_ADMIN']
+                        roles: [ 'ROLE_ADMIN' ]
 
     firewalls:
         dev:
@@ -78,8 +78,9 @@ security:
         - { path: ^/admin/login, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }
 
-        - { path: ^/api/login, roles: PUBLIC_ACCESS  }
-        - { path: ^/api/register, roles: PUBLIC_ACCESS  }
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/.*/reset$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

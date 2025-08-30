@@ -99,6 +99,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->resetTokenExp = time() + $lifetime;
     }
 
+    public function invalidateToken(): void
+    {
+        $this->resetToken = null;
+        $this->resetTokenExp = null;
+    }
+
     /**
      * Gets the time as a unix timestamp when the reset token expires
      */
