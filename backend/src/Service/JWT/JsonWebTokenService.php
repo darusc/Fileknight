@@ -78,6 +78,19 @@ readonly class JsonWebTokenService
     }
 
     /**
+     * Invalidates (removes) all refresh tokens for a given user
+     */
+    public function invalidateAllRefreshTokens(User $user): void
+    {
+        $tokens = $user->getRefreshTokens();
+        /** @var RefreshToken $token */
+        foreach ($tokens as $token) {
+            $this->entityManager->remove($token);
+        }
+        $this->entityManager->flush();
+    }
+
+    /**
      * Get the refresh token from repository and validate it
      * @throws InvalidRefreshTokenException
      */

@@ -8,6 +8,7 @@ use Fileknight\Exception\ApiException;
 use Fileknight\Exception\ForbiddenException;
 use Fileknight\Repository\UserRepository;
 use Fileknight\Service\File\DirectoryService;
+use Fileknight\Service\JWT\JsonWebTokenService;
 use Fileknight\Service\User\Exception\ExpiredTokenException;
 use Fileknight\Service\User\Exception\InvalidTokenException;
 use Fileknight\Service\User\Exception\UserNotFoundException;
@@ -19,7 +20,7 @@ readonly class UserService
         private EntityManagerInterface      $entityManager,
         private UserRepository              $userRepository,
         private UserPasswordHasherInterface $passwordHasher,
-        private DirectoryService            $directoryService,
+        private JsonWebTokenService         $jwtService,
     )
     {
     }
@@ -69,6 +70,9 @@ readonly class UserService
 
         // Invalidate the current token so it cannot be used again
         $user->invalidateToken();
+        // Remove all refresh tokens for this user, as this endpoint
+        // is used for resetting the password as well
+        $this->jwtService->invalidateAllRefreshTokens($user);
 
         // Finally set the password and update the entity in database
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
@@ -93,6 +97,9 @@ readonly class UserService
         if (!$this->passwordHasher->isPasswordValid($user, $old)) {
             throw new ForbiddenException('Old password is invalid');
         }
+
+        // Remove all refresh tokens for this user
+        $this->jwtService->invalidateAllRefreshTokens($user);
 
         $hashedPassword = $this->passwordHasher->hashPassword($user, $new);
         $user->setPassword($hashedPassword);
