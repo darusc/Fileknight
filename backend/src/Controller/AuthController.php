@@ -5,10 +5,11 @@ namespace Fileknight\Controller;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
 use Fileknight\DTO\UserDTO;
-use Fileknight\Entity\User;
 use Fileknight\Exception\ApiException;
 use Fileknight\Exception\ForbiddenException;
 use Fileknight\Response\ApiResponse;
+use Fileknight\Response\JWTResponse;
+use Fileknight\Service\JWT\JsonWebTokenService;
 use Fileknight\Service\Resolver\Request\RequestResolverService;
 use Fileknight\Service\User\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,7 +26,8 @@ class AuthController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserService            $userService,
-        private readonly RequestResolverService $requestResolverService
+        private readonly RequestResolverService $requestResolverService,
+        private readonly JsonWebTokenService    $jwtService,
     )
     {
     }
@@ -58,6 +60,30 @@ class AuthController extends AbstractController
             'User successfully registered.',
             Response::HTTP_CREATED
         );
+    }
+
+    /**
+     * Refresh the JWT. Returns a new JWT and a new refresh token
+     *
+     * ```
+     * POST /api/auth/refresh
+     * {
+     *      refresh_token: (required) The refresh token
+     * }
+     * ```
+     * @throws ApiException
+     */
+    #[Route(path: '/refresh', name: 'auth.refresh', methods: ['POST'])]
+    public function refresh(Request $request): JsonResponse
+    {
+        $data = $this->requestResolverService->resolve($request, ['refresh_token']);
+        $refreshToken = $data->get('refresh_token');
+
+        // Use the refresh token to get a new jwt and a new refresh token
+        [$jwt, $newRefreshToken] = $this->jwtService->refresh($refreshToken);
+        $payload = JsonWebTokenService::decode($jwt);
+
+        return JWTResponse::json($jwt, $payload['iat'], $payload['exp'], $newRefreshToken);
     }
 
     /**
