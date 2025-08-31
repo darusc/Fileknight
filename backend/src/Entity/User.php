@@ -2,7 +2,8 @@
 
 namespace Fileknight\Entity;
 
-use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\UserRepository;
@@ -40,6 +41,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $resetTokenExp = null;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: RefreshToken::class, cascade: ['remove'])]
+    private Collection $refreshTokens;
+
+    public function __construct()
+    {
+        $this->refreshTokens = new ArrayCollection();
+    }
 
     public function getRoles(): array
     {
@@ -99,6 +108,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->resetTokenExp = time() + $lifetime;
     }
 
+    public function invalidateToken(): void
+    {
+        $this->resetToken = null;
+        $this->resetTokenExp = null;
+    }
+
     /**
      * Gets the time as a unix timestamp when the reset token expires
      */
@@ -125,5 +140,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setResetRequired(bool $resetRequired): void
     {
         $this->resetRequired = $resetRequired;
+    }
+
+    public function getRefreshTokens(): Collection
+    {
+        return $this->refreshTokens;
     }
 }
