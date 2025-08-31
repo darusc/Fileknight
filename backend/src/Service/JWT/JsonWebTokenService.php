@@ -5,6 +5,7 @@ namespace Fileknight\Service\JWT;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\RefreshToken;
 use Fileknight\Entity\User;
+use Fileknight\Repository\RefreshTokenRepository;
 use Fileknight\Service\Admin\UserManagementService;
 use Fileknight\Service\JWT\Exception\InvalidRefreshTokenException;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -90,12 +91,20 @@ readonly class JsonWebTokenService
      */
     public function invalidateAllRefreshTokens(User $user): void
     {
-        $tokens = $user->getRefreshTokens();
-        /** @var RefreshToken $token */
-        foreach ($tokens as $token) {
-            $this->entityManager->remove($token);
-        }
-        $this->entityManager->flush();
+        /** @var RefreshTokenRepository $repository */
+        $repository = $this->entityManager->getRepository(RefreshToken::class);
+        $repository->deleteAllByUser($user);
+    }
+
+    /**
+     * Invalidates (removes) all refresh tokens of the given user
+     * corresponding to a given device
+     */
+    public function invalidateAllRefreshTokensForDevice(User $user, string $deviceId): void
+    {
+        /** @var RefreshTokenRepository $repository */
+        $repository = $this->entityManager->getRepository(RefreshToken::class);
+        $repository->deleteAllByDevice($user, $deviceId);
     }
 
     /**

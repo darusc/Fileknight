@@ -141,4 +141,43 @@ class AuthController extends AbstractController
             Response::HTTP_CREATED
         );
     }
+
+    /**
+     * Logout from current device
+     *
+     * ```
+     * POST /api/auth/logout
+     * Headers: Fk-Device-Id
+     * ```
+     * Required headers are enforced by the {@see ApiRequestSubscriber}
+     */
+    #[Route(path: '/logout', name: 'auth.logout', methods: ['POST'])]
+    public function logout(Request $request): JsonResponse
+    {
+        $deviceId = $request->headers->get('Fk-Device-Id');
+        $user = $this->getUserEntity();
+
+        // Logout from device by invalidating all refresh tokens for that device
+        $this->jwtService->invalidateAllRefreshTokensForDevice($user, $deviceId);
+
+        return ApiResponse::success([], "User successfully logged out from device: $deviceId.");
+    }
+
+    /**
+     * Logout from all devices
+     *
+     * ```
+     * POST /api/auth/logout/all
+     * ```
+     */
+    #[Route(path: '/logout/all', name: 'auth.logout.all', methods: ['POST'])]
+    public function logoutAll(Request $request): JsonResponse
+    {
+        $user = $this->getUserEntity();
+
+        // Logout from device by invalidating all refresh tokens for that device
+        $this->jwtService->invalidateAllRefreshTokens($user);
+
+        return ApiResponse::success([], "User successfully logged out from all devices.");
+    }
 }

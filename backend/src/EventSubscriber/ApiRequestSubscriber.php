@@ -27,5 +27,13 @@ class ApiRequestSubscriber implements EventSubscriberInterface
                 throw new BadRequestHttpException('Missing Fk-Device-Id header');
             }
         }
+
+        // POST /api/logout
+        // Enforce a custom header (Fk-Device-Id) on the logout request
+        if ($request->getPathInfo() === '/api/auth/logout' && $request->getMethod() === 'POST') {
+            if (!$request->headers->has('Fk-Device-Id')) {
+                throw new BadRequestHttpException('Missing Fk-Device-Id header');
+            }
+        }
     }
 }
