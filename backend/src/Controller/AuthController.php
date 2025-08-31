@@ -4,6 +4,7 @@ namespace Fileknight\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
+use Fileknight\DTO\RefreshTokenDTO;
 use Fileknight\DTO\UserDTO;
 use Fileknight\Entity\RefreshToken;
 use Fileknight\Exception\ApiException;
@@ -179,5 +180,24 @@ class AuthController extends AbstractController
         $this->jwtService->invalidateAllRefreshTokens($user);
 
         return ApiResponse::success([], "User successfully logged out from all devices.");
+    }
+
+    /**
+     * Get a list of all active sessions
+     *
+     * ```
+     * GET /api/auth/sessions
+     * ```
+     */
+    #[Route(path: '/sessions', name: 'auth.sessions', methods: ['GET'])]
+    public function sessions(Request $request): JsonResponse
+    {
+        $user = $this->getUserEntity();
+
+        $refreshTokens = $this->jwtService->getActiveTokensForUser($user);
+        // Map the array of refresh tokens to an array of corresponding DTOs
+        $data = array_map(fn($token) => RefreshTokenDTO::fromEntity($token)->toArray(), $refreshTokens);
+
+        return ApiResponse::success($data, 'Active sessions fetched.');
     }
 }

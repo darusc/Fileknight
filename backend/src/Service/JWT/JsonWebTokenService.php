@@ -53,6 +53,7 @@ readonly class JsonWebTokenService
         $refreshToken = new RefreshToken();
         $refreshToken->setUser($user);
         $refreshToken->setToken(UserManagementService::generateSecureToken(64));
+        $refreshToken->setIssuedAt(time());
         $refreshToken->setExpiresAt(time() + $this->refreshTokenLifetime);
         $refreshToken->setDeviceId($deviceId);
         $refreshToken->setUserAgent($userAgent);
@@ -105,6 +106,20 @@ readonly class JsonWebTokenService
         /** @var RefreshTokenRepository $repository */
         $repository = $this->entityManager->getRepository(RefreshToken::class);
         $repository->deleteAllByDevice($user, $deviceId);
+    }
+
+    /**
+     * Gets all active tokens for the given user order by the last active
+     * @return RefreshToken[]
+     */
+    public function getActiveTokensForUser(User $user): array
+    {
+        /** @var RefreshTokenRepository $repository */
+        $repository = $this->entityManager->getRepository(RefreshToken::class);
+
+        /** @var RefreshToken[] $tokens */
+        $tokens = $repository->findBy(['user' => $user], ['issuedAt' => 'DESC']);
+        return $tokens;
     }
 
     /**

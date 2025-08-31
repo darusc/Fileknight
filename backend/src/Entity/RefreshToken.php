@@ -17,6 +17,9 @@ class RefreshToken
     private User $user;
 
     #[ORM\Column(type: 'integer')]
+    private int $issuedAt;
+
+    #[ORM\Column(type: 'integer')]
     private int $expiresAt;
 
     #[ORM\Column(type: 'string', length: 256)]
@@ -47,4 +50,7 @@ class RefreshToken
 
     public function getIp(): string { return $this->ip; }
     public function setIp(string $ip): void { $this->ip = $ip; }
+
+    public function getIssuedAt(): int { return $this->issuedAt; }
+    public function setIssuedAt(int $issuedAt): void { $this->issuedAt = $issuedAt; }
 }
