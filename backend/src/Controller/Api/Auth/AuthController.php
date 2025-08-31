@@ -1,6 +1,6 @@
 <?php
 
-namespace Fileknight\Controller;
+namespace Fileknight\Controller\Api\Auth;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
