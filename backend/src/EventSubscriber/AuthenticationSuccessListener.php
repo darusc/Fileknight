@@ -7,6 +7,7 @@ use Fileknight\Response\JWTResponse;
 use Fileknight\Service\JWT\JsonWebTokenService;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 #[AsEventListener(
     event: 'lexik_jwt_authentication.on_authentication_success',
@@ -15,7 +16,8 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 class AuthenticationSuccessListener
 {
     public function __construct(
-        private readonly JsonWebTokenService $refreshTokenService
+        private readonly JsonWebTokenService $refreshTokenService,
+        private readonly RequestStack        $requestStack,
     )
     {
     }
@@ -34,11 +36,17 @@ class AuthenticationSuccessListener
         $jwt = $data['token'];
         $payload = JsonWebTokenService::decode($jwt);
 
+        // Get the user agent and device id headers from the current request
+        $request = $this->requestStack->getCurrentRequest();
+        $userAgent = $request->headers->get('User-Agent');
+        $deviceId = $request->headers->get('Fk-Device-Id');
+        $ip = $request->getClientIp() ?? "";
+
         // Generate a refresh token for the user
-        $refreshToken = $this->refreshTokenService->generateNewRefreshToken($user);
+        $refreshToken = $this->refreshTokenService->generateNewRefreshToken($user, $userAgent, $deviceId, $ip);
 
         // Create the new response
-        $response = JWTResponse::create($jwt, $payload['iat'], $payload['exp'], $refreshToken->getToken());
+        $response = JWTResponse::data($jwt, $payload['iat'], $payload['exp'], $refreshToken->getToken());
 
         // Set the new data
         $event->setData($response);

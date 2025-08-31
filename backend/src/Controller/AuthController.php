@@ -5,6 +5,7 @@ namespace Fileknight\Controller;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;
 use Fileknight\DTO\UserDTO;
+use Fileknight\Entity\RefreshToken;
 use Fileknight\Exception\ApiException;
 use Fileknight\Exception\ForbiddenException;
 use Fileknight\Response\ApiResponse;
@@ -80,10 +81,13 @@ class AuthController extends AbstractController
         $refreshToken = $data->get('refresh_token');
 
         // Use the refresh token to get a new jwt and a new refresh token
+        /** @var string $jwt */
+        /** @var RefreshToken $newRefreshToken */
         [$jwt, $newRefreshToken] = $this->jwtService->refresh($refreshToken);
+
         $payload = JsonWebTokenService::decode($jwt);
 
-        return JWTResponse::json($jwt, $payload['iat'], $payload['exp'], $newRefreshToken);
+        return JWTResponse::json($jwt, $payload['iat'], $payload['exp'], $newRefreshToken->getToken());
     }
 
     /**

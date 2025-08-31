@@ -42,13 +42,20 @@ readonly class JsonWebTokenService
 
     /**
      * Generates a new refresh token for the given user
+     * @param User $user The user for which to generate a refresh token
+     * @param string $userAgent User agent
+     * @param string $deviceId Unique device identifier
+     * @param string $ip IP address associated with the refresh token
      */
-    public function generateNewRefreshToken(User $user): RefreshToken
+    public function generateNewRefreshToken(User $user, string $userAgent, string $deviceId, string $ip): RefreshToken
     {
         $refreshToken = new RefreshToken();
         $refreshToken->setUser($user);
         $refreshToken->setToken(UserManagementService::generateSecureToken(64));
         $refreshToken->setExpiresAt(time() + $this->refreshTokenLifetime);
+        $refreshToken->setDeviceId($deviceId);
+        $refreshToken->setUserAgent($userAgent);
+        $refreshToken->setIp($ip);
 
         $this->entityManager->persist($refreshToken);
         $this->entityManager->flush();
@@ -66,15 +73,16 @@ readonly class JsonWebTokenService
         $token = $this->getRefreshToken($refreshToken);
 
         // Get the associated user with the refresh token and generate a new one
+        // For the new refresh token use the same metadata (user agent, device id, ip) as we replace the old token
         $user = $token->getUser();
-        $newRefreshToken = $this->generateNewRefreshToken($user);
+        $newRefreshToken = $this->generateNewRefreshToken($user, $token->getUserAgent(), $token->getDeviceId(), $token->getIp());
 
         // Delete the old refresh token, and store the new one
         $this->entityManager->remove($token);
         $this->entityManager->persist($newRefreshToken);
         $this->entityManager->flush();
 
-        return [$this->generateNewJWT($user), $this->generateNewRefreshToken($user)->getToken()];
+        return [$this->generateNewJWT($user), $newRefreshToken];
     }
 
     /**
