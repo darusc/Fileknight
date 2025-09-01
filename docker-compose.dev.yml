@@ -28,6 +28,23 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: php-fpm
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    working_dir: /srv/app
+    entrypoint: ["php"]
+    command: ["bin/console", "messenger:consume", "scheduler_default", "-vv"]
+    restart: unless-stopped
+    volumes:
+      - ./backend:/srv/app
+    depends_on:
+      - db
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
