@@ -1,6 +1,6 @@
 <?php
 
-namespace Fileknight\Controller;
+namespace Fileknight\Controller\Api\Files;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;

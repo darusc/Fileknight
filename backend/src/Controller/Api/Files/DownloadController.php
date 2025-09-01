@@ -1,6 +1,6 @@
 <?php
 
-namespace Fileknight\Controller;
+namespace Fileknight\Controller\Api\Files;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Fileknight\Controller\Traits\UserEntityGetterTrait;

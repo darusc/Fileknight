@@ -5,8 +5,10 @@ namespace Fileknight\Service\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\User;
 use Fileknight\Exception\ApiException;
+use Fileknight\Exception\ForbiddenException;
 use Fileknight\Repository\UserRepository;
 use Fileknight\Service\File\DirectoryService;
+use Fileknight\Service\JWT\JsonWebTokenService;
 use Fileknight\Service\User\Exception\ExpiredTokenException;
 use Fileknight\Service\User\Exception\InvalidTokenException;
 use Fileknight\Service\User\Exception\UserNotFoundException;
@@ -18,7 +20,7 @@ readonly class UserService
         private EntityManagerInterface      $entityManager,
         private UserRepository              $userRepository,
         private UserPasswordHasherInterface $passwordHasher,
-        private DirectoryService            $directoryService,
+        private JsonWebTokenService         $jwtService,
     )
     {
     }
@@ -29,8 +31,20 @@ readonly class UserService
     public function getUser(string $username): User
     {
         $user = $this->userRepository->findOneBy(['username' => $username]);
-        if(!$user) {
+        if (!$user) {
             throw new UserNotFoundException($username);
+        }
+        return $user;
+    }
+
+    /**
+     * @throws UserNotFoundException
+     */
+    public function getUserById(int $userId): User
+    {
+        $user = $this->userRepository->find($userId);
+        if (!$user) {
+            throw new UserNotFoundException($userId);
         }
         return $user;
     }
@@ -54,8 +68,42 @@ readonly class UserService
             throw new ExpiredTokenException();
         }
 
+        // Invalidate the current token so it cannot be used again
+        $user->invalidateToken();
+        // Remove all refresh tokens for this user, as this endpoint
+        // is used for resetting the password as well
+        $this->jwtService->invalidateAllRefreshTokens($user);
+
         // Finally set the password and update the entity in database
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Request a password reset for the given user.
+     */
+    public function requestReset(User $user): void
+    {
+        $user->setResetRequired(true);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Change user's password.
+     * @throws ForbiddenException
+     */
+    public function changePassword(User $user, string $old, string $new): void
+    {
+        if (!$this->passwordHasher->isPasswordValid($user, $old)) {
+            throw new ForbiddenException('Old password is invalid');
+        }
+
+        // Remove all refresh tokens for this user
+        $this->jwtService->invalidateAllRefreshTokens($user);
+
+        $hashedPassword = $this->passwordHasher->hashPassword($user, $new);
+        $user->setPassword($hashedPassword);
+
         $this->entityManager->flush();
     }
 }

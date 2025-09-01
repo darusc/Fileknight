@@ -2,7 +2,8 @@
 
 namespace Fileknight\Entity;
 
-use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\UserRepository;
@@ -23,17 +24,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 255, unique: true)]
     private string $username;
 
+    #[ORM\Column(type: 'string', length: 255)]
+    private string $email;
+
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $password = null;
 
+    #[ORM\Column(type: 'boolean')]
+    private bool $resetRequired = false;
+
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $resetToken = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $resetTokenExp = null;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: RefreshToken::class, cascade: ['remove'])]
+    private Collection $refreshTokens;
+
+    public function __construct()
+    {
+        $this->refreshTokens = new ArrayCollection();
+    }
 
     public function getRoles(): array
     {
@@ -67,7 +82,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->username = $username;
     }
 
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
         return $this->password;
     }
@@ -77,7 +92,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->password = $password;
     }
 
-    public function getResetToken(): string
+    public function getResetToken(): ?string
     {
         return $this->resetToken;
     }
@@ -93,11 +108,42 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->resetTokenExp = time() + $lifetime;
     }
 
+    public function invalidateToken(): void
+    {
+        $this->resetToken = null;
+        $this->resetTokenExp = null;
+    }
+
     /**
      * Gets the time as a unix timestamp when the reset token expires
      */
-    public function getResetTokenExp(): int
+    public function getResetTokenExp(): ?int
     {
         return $this->resetTokenExp;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): void
+    {
+        $this->email = $email;
+    }
+
+    public function getResetRequired(): bool
+    {
+        return $this->resetRequired;
+    }
+
+    public function setResetRequired(bool $resetRequired): void
+    {
+        $this->resetRequired = $resetRequired;
+    }
+
+    public function getRefreshTokens(): Collection
+    {
+        return $this->refreshTokens;
     }
 }
