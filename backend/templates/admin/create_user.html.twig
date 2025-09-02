@@ -27,7 +27,7 @@
                 <div>
                     <span class="bold">Token: </span>
                     <span>{{ newUser.token|slice(0, 20) ~ '...' }}</span>
-                    <span class="copy-btn" title="Copy token" onclick="copyToken({{ newUser.token }})"><i class="fa-regular fa-copy"></i></span>
+                    <span class="copy-btn" title="Copy token" onclick="copyToken('{{ newUser.token }}')"><i class="fa-regular fa-copy"></i></span>
                 </div>
                 <div>
                     <span class="bold">Valid for:</span>

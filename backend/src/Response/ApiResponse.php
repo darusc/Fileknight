@@ -52,12 +52,16 @@ class ApiResponse
 
     public static function fromException(ApiException $exception): JsonResponse
     {
-        return new JsonResponse([
-            'success' => false,
-            'error' => $exception->getErrorCode(),
-            'message' => $exception->getErrorMessage(),
-            'details' => $exception->getDetails(),
-            'status' => $exception->getStatusCode(),
-        ], $exception->getStatusCode());
+        return new JsonResponse(
+            [
+                'success' => false,
+                'error' => $exception->getErrorCode(),
+                'message' => $exception->getErrorMessage(),
+                'details' => $exception->getDetails(),
+                'status' => $exception->getStatusCode(),
+            ],
+            $exception->getStatusCode(),
+            $exception->getHeaders()
+        );
     }
 }

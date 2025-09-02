@@ -2,6 +2,7 @@
 
 namespace Fileknight\EventSubscriber;
 
+use Fileknight\Exception\Auth\InvalidJWTException;
 use Fileknight\Service\User\Exception\UserNotFoundException;
 use Fileknight\Service\User\UserService;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTDecodedEvent;
@@ -23,6 +24,7 @@ class JWTDecodedListener
      * This handles JWT invalidation on password changes.
      * If the token was issued before the user was updated in any
      * way it is invalidated
+     * @throws InvalidJWTException
      */
     public function onJWTDecoded(JWTDecodedEvent $event): void
     {
@@ -31,18 +33,16 @@ class JWTDecodedListener
         $iat = $payload['iat'] ?? null;
         $username = $payload['username'] ?? null;
         if (!$iat || !$username) {
-            $event->markAsInvalid();
-            return;
+            throw new InvalidJWTException();
         }
 
         try {
             $user = $this->userService->getUser($username);
             if($iat < $user->getUpdatedAt()->getTimestamp()) {
-                $event->markAsInvalid();
+                throw new InvalidJWTException();
             }
         } catch (UserNotFoundException $_) {
-            $event->markAsInvalid();
-            return;
+            throw new InvalidJWTException();
         }
     }
 }
