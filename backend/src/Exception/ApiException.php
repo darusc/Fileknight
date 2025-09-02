@@ -14,12 +14,14 @@ class ApiException extends Exception
      * @param string $errorMessage String representing a custom message to go along with the error code
      * @param int $statusCode Http status code corresponding to the error
      * @param array $details Optional details about the error
+     * @param array $headers Additional headers to be provided in the response
      */
     public function __construct(
         private readonly string $errorCode,
         private readonly string $errorMessage,
         private readonly int $statusCode,
-        private readonly array $details = []
+        private readonly array $details = [],
+        private readonly array $headers = []
     )
     {
         parent::__construct($this->errorMessage, $this->statusCode);
@@ -43,5 +45,10 @@ class ApiException extends Exception
     public function getDetails(): array
     {
         return $this->details;
+    }
+
+    public function getHeaders(): array
+    {
+        return $this->headers;
     }
 }
