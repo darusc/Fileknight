@@ -8,6 +8,7 @@ use Fileknight\Service\JWT\JsonWebTokenService;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 
 #[AsEventListener(
     event: 'lexik_jwt_authentication.on_authentication_success',
@@ -26,7 +27,7 @@ class AuthenticationSuccessListener
      * On lexik jwt authentication success, generate a refresh token
      * and modify the response structure
      */
-    public function onAuthenticationSuccess(AuthenticationSuccessEvent $event): void
+    public function onAuthenticationSuccess(AuthenticationSuccessEvent $event, RateLimiterFactoryInterface $loginFailureLimiter): void
     {
         /** @var User $user */
         $user = $event->getUser();
@@ -47,6 +48,10 @@ class AuthenticationSuccessListener
 
         // Create the new response
         $response = JWTResponse::data($jwt, $payload['iat'], $payload['exp'], $refreshToken->getToken());
+
+        // Reset the rate limiter after a successful authentication
+        $key = $payload['username'] . '_' . $request->getClientIp();
+        $loginFailureLimiter->create($key)->reset();
 
         // Set the new data
         $event->setData($response);
