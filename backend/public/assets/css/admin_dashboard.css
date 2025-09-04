@@ -1,0 +1,404 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+h2 {
+    color: white;
+}
+
+.dashboard_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+.clock-inline {
+    font-size: 0.9rem;
+    text-align: right;
+    line-height: 1.2;
+}
+.clock-inline span.label {
+    font-weight: bold;
+    margin-right: 0.3rem;
+}
+
+.admin_dashboard {
+    font-family: 'system-ui', -apple-system, "Segoe UI";
+    background-color: #242424;
+    background-image: radial-gradient(#404040 1px, transparent 0);
+    background-size: 15px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 5rem;
+    box-sizing: border-box;
+}
+
+
+
+
+/* ======= HOME ======== */
+
+.dashboard_overview {
+    color: #d4d4d4;
+    box-sizing: border-box;
+    width: 70%;
+}
+
+.dashboard_title {
+    color: white;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+}
+
+.dashboard_cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.card {
+    background: #262626;
+    border: 1px solid #404040;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    background: #2f2f2f;
+}
+
+.card h2 {
+    color: #10b981;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.card p {
+    font-size: 1.6rem;
+    font-weight: bold;
+    margin: 0.5rem 0 1rem;
+    color: white;
+}
+
+.card a {
+    color: #10b981;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.card a:hover {
+    text-decoration: underline;
+}
+
+.dashboard_section {
+    margin-top: 2rem;
+}
+
+.dashboard_section h2 {
+    color: #059669;
+    margin-bottom: 1rem;
+}
+
+
+
+
+/* ========= USERS ========= */
+
+.admin_dashboard .json-users {
+    width: 70%;
+}
+
+.admin_dashboard .json-user {
+    font-family: ui-monospace, monospace;
+    background: #262626;
+    color: #e5e5e5;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.admin_dashboard .json-user.open {
+    border-color: #059669;
+}
+
+.admin_dashboard .json-preview {
+    padding: 0.9rem 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin_dashboard .json-preview:hover {
+    background: #303030;
+}
+
+.admin_dashboard .json-details {
+    display: none;
+    padding: 0.9rem 1rem 1rem;
+    border-top: 1px solid #444;
+}
+
+.admin_dashboard .json-user.open .json-details {
+    display: block;
+}
+
+.admin_dashboard .json-line {
+    white-space: nowrap;
+    line-height: 1.6;
+}
+
+.admin_dashboard .json-line.indent {
+    padding-left: 1.25rem;
+}
+
+/* Syntax colors */
+.admin_dashboard .json-user .k { color: #059669; }
+.admin_dashboard .json-user .v.string { color: #d4d4d4; }
+.admin_dashboard .json-user .v.number { color: #eab308; }
+.admin_dashboard .json-user .v.null { color: #9ca3af; font-style: italic; }
+.admin_dashboard .json-user .p { color: #a3a3a3; }
+
+/* Action buttons */
+.admin_dashboard .json-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.admin_dashboard .btn {
+    background: #059669;
+    border: none;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s ease;
+}
+
+.admin_dashboard .btn.delete {
+    background: #c91d42; /* red */
+}
+
+.admin_dashboard .btn.reset {
+    background: #10b981; /* blue */
+}
+
+.admin_dashboard .btn:hover {
+    opacity: 0.9;
+}
+
+.admin_dashboard .json-actions.create-user {
+    margin-bottom: 1.5rem;
+    margin-top: 0;
+}
+
+.admin_dashboard .btn.create {
+    background: #10b981; /* green */
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+}
+
+.admin_dashboard .btn.create:hover {
+    opacity: 0.9;
+}
+
+
+.usage-lists {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.usage {
+    width: 70%;
+    margin-bottom: 3rem;
+}
+
+.usage_card {
+    background: #262626;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    color: #d4d4d4;
+    flex: 1;
+}
+
+.usage_header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: white;
+    background: #404040;
+    padding: 1rem 1.5rem 0.5rem;
+}
+
+.usage_list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0 1.5rem 0.5rem;
+}
+
+.usage_row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.usage_info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.usage_info .username {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.usage_bar_bg {
+    background: #333;
+    border-radius: 6px;
+    height: 16px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.usage_bar_fg {
+    height: 100%;
+    background: #a3a3a3;
+    border-radius: 6px;
+    transition: width 0.6s ease;
+}
+
+.empty {
+    text-align: center;
+    color: #aaa;
+    margin-top: 1rem;
+}
+
+.info-icon {
+    color: #facc15; /* yellow for warning */
+    margin-left: 0.5rem;
+    cursor: help;
+    float: right;
+}
+
+/* Copy button, transparent background, right-aligned */
+.copy-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #059669; /* primary color */
+}
+
+.copy-btn:hover {
+    color: #10b981;
+}
+
+
+
+
+.server-info-panel {
+    border-radius: 10px;
+    color: #f5f5f5;
+    font-family: 'system-ui', -apple-system, "Segoe UI", sans-serif;
+    width: 70%;
+}
+
+.server-info-panel h2 {
+    margin-bottom: 1rem;
+    color: #ffffff;
+}
+
+.server-info-grid {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.server-column {
+    flex: 1 1 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.server-info-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+    background: #333333;
+    padding: 0.4rem 0.6rem;
+    border-radius: 5px;
+}
+
+.server-info-item .label {
+    font-weight: 500;
+    color: #059669; /* light cyan for labels */
+}
+
+.server-info-item .value {
+    color: #d4d4d4;
+    font-weight: 400;
+}
+
+
+.user-info {
+    margin: 0.5rem;
+}
+
+.user-info-close {
+    float: right;
+    cursor: pointer;
+}
+
+.user-info .copy-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.user-info .copy-btn:hover {
+    color: #d4d4d4;
+}
+
+.success {
+    background: #1e3a2a;
+    color: #fff;
+    padding: 0.85rem 1rem;
+    border-left: 4px solid #10b981;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    text-align: left; /* align text left for readability */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.user-info span.bold {
+    font-weight: bold;
+}
+
+.error {
+    background: #dc2626; /* bright red for visibility */
+    color: #fff;
+    padding: 0.85rem 1rem;
+    border-left: 4px solid #b91c1c; /* accent line for emphasis */
+    border-radius: 8px;
+    font-size: 0.95rem;
+    text-align: left; /* align text left for readability */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    animation: shake 0.3s ease; /* subtle attention animation */
+}

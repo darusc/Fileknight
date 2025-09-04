@@ -1,0 +1,54 @@
+<?php
+
+namespace Fileknight\Exception;
+
+use Exception;
+
+/**
+ * Base exception for all API endpoints
+ */
+class ApiException extends Exception
+{
+    /**
+     * @param string $errorCode String representing the error code: (e.g. FILE_NOT_FOUND)
+     * @param string $errorMessage String representing a custom message to go along with the error code
+     * @param int $statusCode Http status code corresponding to the error
+     * @param array $details Optional details about the error
+     * @param array $headers Additional headers to be provided in the response
+     */
+    public function __construct(
+        private readonly string $errorCode,
+        private readonly string $errorMessage,
+        private readonly int $statusCode,
+        private readonly array $details = [],
+        private readonly array $headers = []
+    )
+    {
+        parent::__construct($this->errorMessage, $this->statusCode);
+    }
+
+    public function getErrorCode(): string
+    {
+        return $this->errorCode;
+    }
+
+    public function getErrorMessage(): string
+    {
+        return $this->errorMessage;
+    }
+
+    public function getStatusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    public function getDetails(): array
+    {
+        return $this->details;
+    }
+
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+}
