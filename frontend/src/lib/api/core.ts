@@ -49,14 +49,14 @@ export interface APIResponse<T> {
   details?: any;
 }
 
-export class APIError extends Error {
+export class ApiError extends Error {
   readonly status: number
   readonly errorCode?: string
   readonly message: string;
   readonly details?: any;
 
   constructor(apiResponse: APIResponse<any>) {
-    super(apiResponse.message);
+    super(apiResponse.error + ": " + apiResponse.message);
     this.status = apiResponse.status;
     this.errorCode = apiResponse.error;
     this.message = apiResponse.message;
@@ -70,6 +70,63 @@ export class APIError extends Error {
 export class Core {
 
   private lastApiResponse: APIResponse<any> | null = null;
+
+  private jwtTokenProvider: () => string | null = () => null;
+
+  public setJwtTokenProvider(provider: () => string | null) {
+    this.jwtTokenProvider = provider;
+  }
+
+  public getJwtToken(): string | null {
+    return this.jwtTokenProvider();
+  }
+
+  /**
+   * Returns the last API response received, or null if no requests have been made yet.
+   */
+  public getLastApiResponse(): APIResponse<any> | null {
+    return this.lastApiResponse;
+  }
+
+  /**
+   * Convenience method GET request.
+   * Returns the response data directly, or throws an APIError on failure.
+   */
+  public get<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
+    return this.request<T>('GET', endpoint, options);
+  }
+
+  /**
+   * Convenience method for POST request.
+   * Returns the response data directly, or throws an APIError on failure.
+   */
+  public post<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
+    return this.request<T>('POST', endpoint, options);
+  }
+
+  /**
+   * Convenience method for PUT request.
+   * Returns the response data directly, or throws an APIError on failure.
+   */
+  public put<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
+    return this.request<T>('PUT', endpoint, options);
+  }
+
+  /**
+   * Convenience method for PATCH request.
+   * Returns the response data directly, or throws an APIError on failure.
+   */
+  public patch<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
+    return this.request<T>('PATCH', endpoint, options);
+  }
+
+  /**
+   * Convenience method for DELETE request.
+   * Returns the response data directly, or throws an APIError on failure.
+   */
+  public delete<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
+    return this.request<T>('DELETE', endpoint, options);
+  }
 
   /**
    * Builds a complete URL with query parameters if provided.
@@ -94,85 +151,29 @@ export class Core {
     const { query, body, headers } = info;
     const url = this.buildURL(endpoint, query);
 
-    try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-    
-      // Parse the JSON response into the APIResponse interface
-      const apiResponse = await response.json() as APIResponse<T>;
-      // If the response indicates failure, throw an APIError
-      if (!apiResponse.success) {
-        throw new APIError(apiResponse);
-      }
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-      // Store the last API response
-      this.lastApiResponse = apiResponse;
-
-      return (apiResponse.data || {}) as T;
-
-    } catch (error) {
-      console.error('API Request:', error)
-
-      // Api errors are re-thrown for the caller to handle
-      if (error instanceof APIError) {
-        throw error;
-      }
+    // Parse the JSON response into the APIResponse interface
+    const apiResponse = await response.json() as APIResponse<T>;
+    // If the response indicates failure, throw an APIError
+    if (!apiResponse.success) {
+      // Throw an ApiError with the response details and log it
+      const error = new ApiError(apiResponse);
+      console.error(error);
+      throw error;
     }
-    
-    return {} as T;
-  }
 
-  /**
-   * Returns the last API response received, or null if no requests have been made yet.
-   */
-  getLastApiResponse(): APIResponse<any> | null {
-    return this.lastApiResponse;
-  }
+    // Store the last API response
+    this.lastApiResponse = apiResponse;
 
-  /**
-   * Convenience method GET request.
-   * Returns the response data directly, or throws an APIError on failure.
-   */
-  get<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
-    return this.request<T>('GET', endpoint, options);
-  }
-
-  /**
-   * Convenience method for POST request.
-   * Returns the response data directly, or throws an APIError on failure.
-   */
-  post<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
-    return this.request<T>('POST', endpoint, options);
-  }
-
-  /**
-   * Convenience method for PUT request.
-   * Returns the response data directly, or throws an APIError on failure.
-   */
-  put<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
-    return this.request<T>('PUT', endpoint, options);
-  }
-
-  /**
-   * Convenience method for PATCH request.
-   * Returns the response data directly, or throws an APIError on failure.
-   */
-  patch<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
-    return this.request<T>('PATCH', endpoint, options);
-  }
-
-  /**
-   * Convenience method for DELETE request.
-   * Returns the response data directly, or throws an APIError on failure.
-   */
-  delete<T = any>(endpoint: string, options?: AdditionalRequestOptions): Promise<T> {
-    return this.request<T>('DELETE', endpoint, options);
+    return (apiResponse.data || {}) as T;
   }
 }
 
@@ -206,4 +207,11 @@ export interface Session {
   user_agent: string;
   ip_address: string;
   device_id: string;
+}
+
+export interface JWTTokenData {
+  jwt: string;
+  iat: number;
+  exp: number;
+  refresh_token: string;
 }
