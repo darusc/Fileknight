@@ -1,0 +1,343 @@
+{# templates/admin/dashboard.html.twig #}
+{% extends 'base.html.twig' %}
+
+{# ... #}
+
+{% block title %}Fileknight - Admin dashboard{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('/assets/css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+{% endblock %}
+
+{% block body %}
+    <section class="admin_dashboard">
+        <img src="{{ asset('/assets/image/logo.png') }}" alt="Admin Logo" class="login-logo">
+
+        <div class="dashboard_overview">
+
+            <div class="dashboard_header">
+                <h1 class="dashboard_title">Admin Dashboard</h1>
+
+                <div class="clock-inline">
+                    <div>
+                        <span class="label">Server:</span>
+                        <span class="label">({{ serverTimezone }})</span>
+                        <span id="clock-server"></span>
+                    </div>
+                    <div>
+                        <span class="label">Local:</span>
+                        <span class="label" id="browser-timezone"></span>
+                        <span id="clock-browser"></span>
+                    </div>
+
+                    <script>
+
+                    </script>
+                </div>
+            </div>
+
+            <div class="dashboard_cards">
+                <!-- User Stats -->
+                <div class="card">
+                    <h2>Total Users</h2>
+                    <p>{{ overview.users.total }}</p>
+                    <a href="#users">View all users →</a>
+                </div>
+
+                <div class="card">
+                    <h2>Reset Requests</h2>
+                    <p>{{ overview.users.pending_resets }}</p>
+                    <a href="#users">Manage resets →</a>
+                </div>
+
+                <!-- Filesystem Stats -->
+                <div class="card">
+                    <h2>Total Files</h2>
+                    <p>{{ overview.filesystem.total_files }}</p>
+                    <a href="#stats">View details →</a>
+                </div>
+
+                <div class="card">
+                    <h2>Disk Usage</h2>
+                    <p>{{ (overview.filesystem.used_space/1024/1024/1024)|number_format(2, '.', ',') }} GB</p>
+                    <a href="#stats">See statistics →</a>
+                </div>
+
+                <div class="card">
+                    <h2>Server</h2>
+                    <p>{{ server.info.webServer }}</p>
+                    <a href="#server-info">See server info →</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="users" class="json-users">
+            <h2>User management</h2>
+            <div class="json-actions create-user">
+                <a href="{{ path('admin_create_user') }}" class="btn create">+ Create New User</a>
+            </div>
+
+            {% set success = app.flashes('reset_success') %}
+            {% set userId = app.flashes('reset_id')|first %}
+            {% set token = app.flashes('reset_token')|first %}
+            {% set expires = app.flashes('reset_expires')|first %}
+            {% for user in users %}
+                <div class="json-user">
+                    <!-- Preview (username only) -->
+                    <div class="json-preview" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="p">{</span>
+                        <span class="k">"username"</span><span class="p">: </span>
+                        <span class="v string">"{{ user.username|e }}"</span>,
+                        <span class="k">"email"</span><span class="p">: </span>
+                        <span class="v string">"{{ user.email|e|default("null") }}"</span>
+
+                        {% if user.password is null %}
+                            <i class="fa-solid fa-clock info-icon" title="User final setup pending"></i>
+                        {% endif %}
+
+                        {% if user.resetRequired %}
+                            <i class="fa-solid fa-info-circle info-icon" title="Password reset requested"></i>
+                        {% endif %}
+                        <span class="p"> ... }</span>
+                    </div>
+
+                    {% if success is not empty and userId == user.id %}
+                        <div class="user-info success">
+                            <div class="title">
+                                User token reset successful!
+                                <span class="user-info-close copy-btn" onclick="closeUserInfo()"><i class="fa-solid fa-xmark"></i></span>
+                            </div>
+                            <span class="bold">Token: </span>
+                            <span>{{ token }}</span>
+                            <span class="copy-btn" title="Copy token" onclick="copyToken('{{ token }}')"><i
+                                    class="fa-regular fa-copy"></i></span>,
+                            <span class="bold">Valid for:</span>
+                            <span>{{ expires }} seconds</span>
+                        </div>
+                    {% endif %}
+                    {% if app.flashes('reset_error') is not empty %}
+                        <div class="user-info error">
+                            <div class="title">
+                                User token reset failed!
+                                <span class="user-info-close copy-btn" onclick="closeUserInfo()"><i class="fa-solid fa-xmark"></i></span>
+                            </div>
+                            <span>{{ app.flashes('reset_error')|first }}</span>
+                        </div>
+                    {% endif %}
+
+                    <!-- Hidden details -->
+                    <div class="json-details">
+                        <div class="json-line">
+                            <span class="p">{</span>
+                        </div>
+
+                        <div class="json-line indent">
+                            <span class="k">"id"</span><span class="p">: </span>
+                            <span class="v number">{{ user.id }}</span><span class="p">,</span>
+                        </div>
+
+                        <div class="json-line indent">
+                            <span class="k">"roles"</span><span class="p">: </span>
+                            <span class="v string">{{ user.roles|join(', ') }}</span><span class="p">,</span>
+                        </div>
+
+                        <div class="json-line indent">
+                            <span class="k">"created"</span><span class="p">: </span>
+                            <span class="v string">{{ user.createdAt|date('Y-m-d H:i') }}</span><span class="p">,</span>
+                        </div>
+
+                        <div class="json-line indent">
+                            <span class="k">"updated"</span><span class="p">: </span>
+                            <span class="v string">{{ user.updatedAt|date('Y-m-d H:i') }}</span><span class="p">,</span>
+                        </div>
+
+{#                        <div class="json-line indent">#}
+{#                            <span class="k">"reset_token"</span><span class="p">: </span>#}
+{#                            {% if user.resetToken %}#}
+{#                                <span class="v string" id="token-{{ user.id }}">{{ user.resetToken|e }}</span>#}
+{#                                <span class="copy-btn" onclick="copyToken('token-{{ user.id }}', event)">#}
+{#                                    <i class="fa-solid fa-copy"></i>#}
+{#                                </span>#}
+{#                                <span class="p">,</span>#}
+{#                            {% else %}#}
+{#                                <span class="v null">null</span><span class="p">,</span>#}
+{#                            {% endif %}#}
+{#                        </div>#}
+
+                        <div class="json-line indent">
+                            <span class="k">"reset_token_expires_at"</span><span class="p">: </span>
+                            {% if user.resetTokenExp %}
+                                <span class="v string">{{ user.resetTokenExp|date('Y-m-d H:i') }}</span>
+                            {% else %}
+                                <span class="v null">null</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="json-line">
+                            <span class="p">}</span>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="json-actions">
+                            <form method="post" action="{{ path('admin_delete_user', {id: user.id}) }}" onsubmit="return confirm('Are you sure you want to delete this user? All files will be permanently deleted.');">
+                                <button type="submit" class="btn delete">Delete</button>
+                            </form>
+                            <form method="post" action="{{ path('admin_reset_user', {id: user.id}) }}">
+                                <button type="submit" class="btn reset">Generate new token</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="json-empty">No users found.</div>
+            {% endfor %}
+        </div>
+
+
+        <div id="stats" class="usage">
+            <h2>Filesystem Usage</h2>
+            <div class="usage-lists">
+
+                <div class="usage_card">
+                    <div class="usage_header">
+                        <span>User</span>
+                        <span>Files</span>
+                    </div>
+
+                    <div class="usage_list">
+                        {% for s in usageStatistics %}
+                            <div class="usage_row">
+                                <div class="usage_info">
+                                    <span class="username">{{ s.username }}</span>
+                                    <span>{{ s.files }}</span>
+                                </div>
+                                <div class="usage_bar_bg">
+                                    <div class="usage_bar_fg" style="width: {{ s.percent }}%"></div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="empty">No filesystem data available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="usage_card">
+                    <div class="usage_header">
+                        <span>User</span>
+                        <span>Storage</span>
+                    </div>
+
+                    <div class="usage_list">
+                        {% for s in usageStatistics %}
+                            <div class="usage_row">
+                                <div class="usage_info">
+                                    <span class="username">{{ s.username }}</span>
+                                    <span>{{ (s.size / 1024 / 1024 / 1024)|number_format(2, '.', ',') }} GB</span>
+                                </div>
+                                <div class="usage_bar_bg">
+                                    <div class="usage_bar_fg" style="width: {{ s.percent }}%"></div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="empty">No filesystem data available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="server-info" class="server-info-panel">
+            <h2>Server</h2>
+            <div class="server-info-grid">
+                <div class="server-column">
+                    <div class="server-info-item">
+                        <span class="label">Server Timezone:</span>
+                        <span class="value">{{ server.info.timezone }}</span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">Server Hostname:</span>
+                        <span class="value">{{ server.info.hostname }}</span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">Server public IP / container IP:</span>
+                        <span class="value">{{ server.info.ip }} / {{ server.info.containerIp }}</span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">PHP Version:</span>
+                        <span class="value">{{ server.info.phpVersion }}</span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">Web Server:</span>
+                        <span class="value">{{ server.info.webServer }}</span>
+                    </div>
+                </div>
+
+                <div class="server-column">
+                    <div class="server-info-item">
+                        <span class="label">Database:</span>
+                        <span class="value">
+                            {{ server.db.name }} {{ server.db.version }}
+                            <a href="http://localhost:8080" style="color: #D3D3D3">→ phpMyAdmin</a>
+                        </span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">Disk Usage:</span>
+                        <span class="value">{{ server.disk.used }} / {{ server.disk.total }}</span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">Memory:</span>
+                        <span class="value">{{ server.memory.used }} / {{ server.memory.total }}</span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">CPU:</span>
+                        <span class="value">{{ server.cpuCores }} cores</span>
+                    </div>
+                    <div class="server-info-item">
+                        <span class="label">Uptime:</span>
+                        <span class="value">{{ server.uptime }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const now = new Date();
+            const offset = -now.getTimezoneOffset() / 60; // offset in hours
+            const sign = offset >= 0 ? '+' : '-';
+            const gmt = '(GMT' + sign + Math.abs(offset) + ')';
+            document.getElementById("browser-timezone").textContent = gmt;
+        });
+
+        function updateClocks() {
+            const now = new Date();
+
+            // Server time
+            const serverTz = "{{ serverTimezone }}";
+            const server = now.toLocaleTimeString('en-GB', {hour12: false, timeZone: serverTz});
+            document.getElementById('clock-server').textContent = server;
+
+            // Browser local time
+            const browser = now.toLocaleTimeString('en-GB', {hour12: false});
+            document.getElementById('clock-browser').textContent = browser;
+        }
+
+        setInterval(updateClocks, 1000);
+        updateClocks();
+
+        function copyToken(token) {
+            navigator.clipboard.writeText(token).then(() => {
+                alert('Token copied to clipboard!');
+            });
+        }
+
+        function closeUserInfo() {
+            document.querySelector(".user-info").style.display = "none";
+        }
+    </script>
+{% endblock %}

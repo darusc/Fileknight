@@ -6,9 +6,9 @@
     root * /srv/app/public
     encode zstd gzip
 
-    # API -> Symfony (PHP-FPM)
-    @api path /api/*
-    handle @api {
+    # API + Admin page -> Symfony (PHP-FPM)
+    @symfony path /api/* /admin/*
+    handle @symfony {
         # Let Symfony's front controller handle API routes
         rewrite * /index.php
         php_fastcgi php:9000

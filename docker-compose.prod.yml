@@ -11,8 +11,39 @@ services:
         GID: ${GID:-1000}
     volumes:
       - ./backend:/srv/app
+      - ./backend/storage:/srv/storage
     environment:
       APP_ENV: prod
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: php-fpm
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    working_dir: /srv/app
+    entrypoint: [ "php" ]
+    command: [ "bin/console", "messenger:consume", "scheduler_default", "-vv" ]
+    restart: unless-stopped
+    volumes:
+      - ./backend:/srv/app
+    depends_on:
+      - db
 
   frontend:
     image: node:20-alpine
@@ -34,3 +65,6 @@ services:
       - ./docker/caddy/Caddyfile.prod:/etc/caddy/Caddyfile
     depends_on:
       - php
+
+volumes:
+  db_data:

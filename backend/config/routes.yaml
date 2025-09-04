@@ -3,3 +3,6 @@ controllers:
         path: ../src/Controller/
         namespace: Fileknight\Controller
     type: attribute
+
+api.login:
+    path: /api/auth/login
