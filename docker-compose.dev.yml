@@ -11,8 +11,50 @@ services:
         GID: ${GID:-1000}
     volumes:
       - ./backend:/srv/app
+      - ./backend/storage:/srv/storage
     environment:
       APP_ENV: dev
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: php-fpm
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    working_dir: /srv/app
+    entrypoint: ["php"]
+    command: ["bin/console", "messenger:consume", "scheduler_default", "-vv"]
+    restart: unless-stopped
+    volumes:
+      - ./backend:/srv/app
+    depends_on:
+      - db
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - '8080:80'
+    depends_on:
+      - db
 
   caddy:
     build:
@@ -37,3 +79,6 @@ services:
       - ./frontend:/app
     environment:
       VITE_API_URL: http://localhost/api
+
+volumes:
+  db_data:
