@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\UserRepository;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -17,9 +18,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     use TimestampTrait;
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    private int $id;
+    #[ORM\GeneratedValue(strategy: "NONE")]
+    #[ORM\Column(type: 'string')]
+    private string $id;
 
     #[ORM\Column(type: 'string', length: 255, unique: true)]
     private string $username;
@@ -48,6 +49,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->refreshTokens = new ArrayCollection();
+        $this->id = str_replace('-', '', Uuid::uuid4()->toString());
     }
 
     public function getRoles(): array
