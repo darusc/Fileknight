@@ -60,6 +60,17 @@ export class Auth {
   }
 
   /**
+   * This is used for finishing the registration process. 
+   * The user entity is created by the server's admin, 
+   * this api just sets finished registration (sets the password) using the received token
+   * ```
+   * POST /api/auth/register
+   * {
+   *   username: (required) User's unique username
+   *   password: (required) User's password
+   *   token:    (required) Token used for registration. Received from server admin
+   * }
+   * ```
    * @param username User's unique username
    * @param password User's password
    * @param token - Registration token
@@ -75,6 +86,13 @@ export class Auth {
   }
 
   /**
+   * ```
+   * POST /api/auth/login
+   * {
+   *     username:
+   *     password:
+   * }
+   * ```
    * @param username User's unique username
    * @param password User's password
    */
@@ -95,6 +113,9 @@ export class Auth {
 
   /**
    * Requests a password reset for the currently logged-in user.
+   * ```
+   * POST /api/auth/{userId}/reset
+   * ```
    */
   async requestPasswordReset(): Promise<void> {
     // TODO... (needs backend API change)
@@ -102,6 +123,13 @@ export class Auth {
 
   /**
    * Changes the password for the currently logged-in user.
+   * ```
+   * PATCH /api/auth/{userId}/edit/password
+   * {
+   *     oldPassword: (required) User's old password
+   *     newPassword: (required) User's new password
+   * }
+   * ```
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     // TODO... (needs backend API change)
@@ -111,6 +139,10 @@ export class Auth {
    * Logs out the use from the current device 
    * by invalidating the refresh token on the server
    * and clearing the local jwt store.
+   * ```
+   * POST /api/auth/logout
+   * Headers: Fk-Device-Id
+   * ```
    */
   async logout(): Promise<void> {
     this.core.post<void>(Auth.endpoints.logout, {
@@ -124,7 +156,10 @@ export class Auth {
 
   /**
    * Logs out the user from all devices by invalidating all refresh tokens
-   */
+   * ```
+   * POST /api/auth/logout/all
+   * ``` 
+  */
   async logoutAll(): Promise<void> {
     this.core.post<void>(Auth.endpoints.logoutAll, {
       headers: {
@@ -134,6 +169,11 @@ export class Auth {
     this.clear();
   }
 
+  /**
+   * ```
+   * GET /api/auth/sessions
+   * ```
+   */
   async sessions(): Promise<Session[]> {
     return await this.core.get<Session[]>(`/api/auth/sessions`, {
       headers: {
@@ -146,6 +186,12 @@ export class Auth {
    * Refresh the JWT token using the provided refresh token.
    * Refresh is automatically called before the token expires.
    * If refresh fails, the user is logged out. 
+   * ```
+   * POST /api/auth/refresh
+   * {
+   *     refresh_token: (required) The refresh token
+   * }
+   * ```
    */
   private async refresh(refreshToken: string) {
     try {
