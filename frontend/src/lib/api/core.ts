@@ -128,6 +128,10 @@ export class Core {
     return this.request<T>('DELETE', endpoint, options);
   }
 
+  public download(endpoint: string, options?: AdditionalRequestOptions): Promise<Blob> {
+    return this.requestDownload(endpoint, options);
+  }
+
   /**
    * Builds a complete URL with query parameters if provided.
    */
@@ -175,6 +179,31 @@ export class Core {
 
     return (apiResponse.data || {}) as T;
   }
+
+  private async requestDownload(endpoint: string, info: AdditionalRequestOptions = {}): Promise<Blob> {
+    const { query, body, headers } = info;
+    const url = this.buildURL(endpoint, query);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    // If the download was not successful throw an ApiError
+    // Unsuccessful download returns a JSON response
+    if (!response.ok) {
+      const error = new ApiError(await response.json() as APIResponse<any>);
+      console.error(error);
+      throw error;
+    }
+
+    // Return the file blob received from the server
+    return await response.blob();
+  }
 }
 
 export interface User {
@@ -199,6 +228,11 @@ export interface Folder {
   name: string;
   created_at: number;
   updated_at: number;
+}
+
+export interface FolderContent {
+  directories: Folder[];
+  files: File[];
 }
 
 export interface Session {
