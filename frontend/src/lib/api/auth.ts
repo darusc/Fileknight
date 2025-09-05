@@ -15,6 +15,7 @@ export class Auth {
     logoutAll: "/api/auth/logout/all",
     refresh: "/api/auth/refresh",
     requestPasswordReset: (userId: string) => `/api/auth/${userId}/reset`,
+    requestChangePassword: (userId: string) => `/api/auth/${userId}/edit/password`
   };
 
   private core: Core;
@@ -118,7 +119,9 @@ export class Auth {
    * ```
    */
   async requestPasswordReset(): Promise<void> {
-    // TODO... (needs backend API change)
+    // Get the user ID from the JWT payload
+    const userId = this.getJWTPayload(this.jwt!.jwt)['user_id'];
+    this.core.post<void>(Auth.endpoints.requestPasswordReset(userId));
   }
 
   /**
@@ -132,7 +135,17 @@ export class Auth {
    * ```
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    // TODO... (needs backend API change)
+    // Get the user ID from the JWT payload
+    const userId = this.getJWTPayload(this.jwt!.jwt)['user_id'];
+    this.core.patch<void>(Auth.endpoints.requestChangePassword(userId), {
+      body: {
+        'oldPassword': currentPassword,
+        'newPassword': newPassword
+      },
+      headers: {
+        'Authorization': `Bearer ${this.getToken()}`
+      }
+    });
   }
 
   /**
@@ -227,5 +240,15 @@ export class Auth {
   private clear() {
     this.jwt = null;
     localStorage.removeItem('refresh_token');
+  }
+
+  /**
+   * Gets the payload of a JWT token.
+   */
+  private getJWTPayload(jwt: string): any {
+    const payloadB64 = jwt.split('.')[1];
+    const payloadDecoded = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+
+    return JSON.parse(payloadDecoded);
   }
 }
