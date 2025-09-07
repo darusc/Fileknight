@@ -20,6 +20,10 @@ export class AuthService {
     this.auth = auth;
   }
 
+  public isAuthenticated(): boolean {
+    return this.auth.isAuthenticated();
+  }
+
   /**
    * Returns true if login was successful, false otherwise.
    */

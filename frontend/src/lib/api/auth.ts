@@ -28,14 +28,21 @@ export class Auth {
   /**
    * Device ID for the current session, used for login and logout
    */
-  private deviceId: string;
+  private deviceId: string = "";
 
   constructor(core: Core) {
     this.core = core;
     // Set the core's JWT token provider to return the current token
     this.core.setJwtTokenProvider(() => this.getToken());
+  }
 
-    // Initialize or retrieve a unique device ID for this client
+  /**
+   * Initializes the Auth service by checking for existing tokens in local storage.
+   * If a refresh token is found, it attempts to refresh the JWT token.
+   * This should be called once on application startup.
+   */
+  public async initialize(): Promise<void> {
+    // Create new or retrieve a unique device ID for this client
     const devId = localStorage.getItem('device_id');
     if (devId) {
       this.deviceId = devId;
@@ -48,7 +55,7 @@ export class Auth {
     // and attempt to obtain a new JWT token
     const refreshToken = localStorage.getItem('refresh_token');
     if (refreshToken) {
-      this.refresh(refreshToken);
+      await this.refresh(refreshToken);
     }
   }
 
