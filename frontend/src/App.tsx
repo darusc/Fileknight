@@ -9,6 +9,7 @@ import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { ThemeToggle } from "./components/theme-toggle";
 import { ProtectedRoute, RedirectAuthenticatedRoute } from "./components/ProtectedRoute";
+import Main from "./components/layout/main";
 
 function App() {
   return (
@@ -19,7 +20,11 @@ function App() {
         {/* The user needs to be authenticated to access this routes
             If not authenticated, they will be redirected to /login */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<div>Home</div>} />
+          <Route element={<Main />}>
+            <Route path="/home" element={<div>Home</div>} />
+            <Route path="/folders" element={<div>Folders</div>} />
+            <Route path="/profile" element={<div>Profile</div>} />
+          </Route>
         </Route>
         {/* If the user is already authenticated, they will be redirected to /
             Doing this to avoid creating new unnecessary sessions */}
