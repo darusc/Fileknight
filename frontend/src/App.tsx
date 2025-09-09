@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFoundPage from "./pages/404";
 import PasswordReset from "./pages/PasswordReset";
+import Home from "./pages/Home";
 
 import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./components/theme-provider";
@@ -21,7 +22,7 @@ function App() {
             If not authenticated, they will be redirected to /login */}
         <Route element={<ProtectedRoute />}>
           <Route element={<Main />}>
-            <Route path="/home" element={<div>Home</div>} />
+            <Route path="/home" element={<Home/>} />
             <Route path="/folders" element={<div>Folders</div>} />
             <Route path="/profile" element={<div>Profile</div>} />
           </Route>

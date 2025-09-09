@@ -6,7 +6,7 @@ export default function Main() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main>
+      <main className="flex-grow">
         <SidebarTrigger/>
         <Outlet />
       </main>
