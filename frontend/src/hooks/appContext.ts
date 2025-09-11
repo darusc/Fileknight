@@ -9,3 +9,8 @@ export function useAuth() {
   const { auth } = useAppContext();
   return auth;
 }
+
+export function useFiles() {
+  const { file } = useAppContext();
+  return file;
+}

@@ -11,6 +11,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import { ThemeToggle } from "./components/theme-toggle";
 import { ProtectedRoute, RedirectAuthenticatedRoute } from "./components/ProtectedRoute";
 import Main from "./components/layout/main";
+import Files from "./pages/Files";
 
 function App() {
   return (
@@ -23,7 +24,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Main />}>
             <Route path="/home" element={<Home/>} />
-            <Route path="/folders" element={<div>Folders</div>} />
+            <Route path="/f/:folderId?" element={<Files/>} />
             <Route path="/profile" element={<div>Profile</div>} />
           </Route>
         </Route>

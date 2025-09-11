@@ -1,13 +1,12 @@
 import { Outlet } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "../ui/sidebar";
+import { SidebarProvider } from "../ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 
 export default function Main() {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-sidebar h-screen">
       <AppSidebar />
-      <main className="flex-grow">
-        <SidebarTrigger/>
+      <main className="overflow-hidden flex-grow mt-4 bg-background br-2 rounded-tl-xl shadow-md p">
         <Outlet />
       </main>
     </SidebarProvider>    

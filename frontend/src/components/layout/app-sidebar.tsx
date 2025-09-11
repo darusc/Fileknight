@@ -36,7 +36,7 @@ import {
 
 const navItems = [
   { name: "Home", path: "/home", icon: Home },
-  { name: "My Storage", path: "/folders", icon: Folder },
+  { name: "My Files", path: "/f/", icon: Folder },
   { name: "Starred", path: "/", icon: Star },
 ]
 
@@ -45,7 +45,7 @@ export function AppSidebar() {
   const location = useLocation();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-none">
       {/* Header */}
       <SidebarHeader>
         {/* Logo */}

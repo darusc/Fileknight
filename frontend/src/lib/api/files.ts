@@ -20,11 +20,10 @@ export class Files {
    * GET /api/files?parentId={id}
    * ```   
    */
-  public async list(parentId: string): Promise<FolderContent> {
+  public async list(parentId?: string): Promise<FolderContent> {
+    const query = parentId ? { parentId: parentId } : undefined
     return await this.core.get<FolderContent>("/api/files", {
-      query: {
-        parentId: parentId
-      },
+      query: query,
       headers: {
         'Authorization': `Bearer ${this.core.getJwtToken()}`
       }
@@ -64,7 +63,7 @@ export class Files {
    * @param updated Object containing the fields (optional) to update.
    * @returns 
    */
-  public async update(file: string, updated: {parentId?: string, name?: string}): Promise<ApiFile> {
+  public async update(file: string, updated: { parentId?: string, name?: string }): Promise<ApiFile> {
     return await this.core.patch<ApiFile>(`/api/files/${file}`, {
       body: updated,
       headers: {
@@ -79,7 +78,7 @@ export class Files {
    * ```
    */
   public async delete(file: string): Promise<void> {
-    this.core.delete<void>(`/api/files/${file}`, { 
+    this.core.delete<void>(`/api/files/${file}`, {
       headers: {
         'Authorization': `Bearer ${this.core.getJwtToken()}`
       }
@@ -124,7 +123,7 @@ export class Files {
    * @param updated Object containing the fields (optional) to update.
    * @returns 
    */
-  public async updateFolder(folder: string, updated: {parentId?: string, name?: string}): Promise<ApiFile> {
+  public async updateFolder(folder: string, updated: { parentId?: string, name?: string }): Promise<ApiFile> {
     return await this.core.patch<ApiFile>(`/api/files/folders/${folder}`, {
       body: updated,
       headers: {

@@ -219,15 +219,15 @@ export interface File {
   name: string;
   size: number;
   extension: string;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Folder {
   id: string;
   name: string;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface FolderContent {

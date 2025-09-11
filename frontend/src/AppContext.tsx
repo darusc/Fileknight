@@ -2,19 +2,24 @@ import { createContext, useEffect, useState } from "react";
 
 import { Auth } from "./lib/api/auth";
 import { Core as ApiCore } from "./lib/api/core";
+import { Files } from "./lib/api/files";
 import { AuthService } from "./services/AuthService";
+import { FileService } from "./services/FileService";
 
 import Loading from "./pages/Loading";
 
 type AppServices = {
   auth: AuthService;
+  file: FileService
 }
 
 const apiCore = new ApiCore();
 const apiAuth = new Auth(apiCore);
+const apiFiles = new Files(apiCore)
 
 const services: AppServices = {
   auth: new AuthService(apiAuth),
+  file: new FileService(apiFiles)
 }
 
 const AppContext = createContext({} as AppServices);
