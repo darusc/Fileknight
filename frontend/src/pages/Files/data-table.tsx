@@ -1,9 +1,12 @@
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+
+import type { ColumnItemType } from "./columns"
+
 import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
-  getSortedRowModel,
-  type SortingState,
   useReactTable,
 } from "@tanstack/react-table"
 
@@ -15,36 +18,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useState } from "react"
-import type { ColumnItemType } from "./columns"
-import { useNavigate } from "react-router-dom"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[],
+interface DataTableProps {
+  columns: ColumnDef<ColumnItemType>[]
+  data: ColumnItemType[],
+  onSort: (key: string, desc: boolean) => void,
   setPath: React.Dispatch<React.SetStateAction<{ id?: string; name: string }[]>>
 }
 
-export function DataTable<TData, TValue>({
+type SortConfig = { key: string; desc: boolean } | null;
+
+export function DataTable({
   columns,
   data,
+  onSort,
   setPath
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps) {
   const navigate = useNavigate();
-  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    state: {
-      sorting,
-    }
-  })
+  });
 
   return (
     <div className="rounded-md px-4">
@@ -57,6 +57,14 @@ export function DataTable<TData, TValue>({
                   <TableHead
                     key={header.id}
                     className={`${idx === 0 ? "text-left" : "text-center"}`}
+                    onClick={() => {
+                      const key = header.column.columnDef.meta?.sortKey;
+                      if (key) {
+                        const desc = sortConfig?.key === key ? !sortConfig.desc : false;
+                        onSort(key, desc);
+                        setSortConfig({ key, desc });
+                      }
+                    }}
                   >
                     {header.isPlaceholder
                       ? null

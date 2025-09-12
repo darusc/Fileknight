@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 
 import { useFiles } from "@/hooks/appContext"
+import { splitBy } from "@/lib/utils"
 
 import Topbar from "@/components/layout/app-topbar"
 import { Input } from "@/components/ui/input"
@@ -12,12 +13,13 @@ import { DataTable } from "./data-table"
 import { columns, type ColumnItemType } from "./columns"
 
 export default function FilesPage() {
-  const [query, setQuery] = useState("")
+  const fileService = useFiles();
 
   const params = useParams<{ folderId?: string }>();
 
-  const fileService = useFiles();
+  const [query, setQuery] = useState("")
   const [data, setData] = useState<ColumnItemType[]>([]);
+  const [path, setPath] = useState<{ id?: string, name: string }[]>([{ name: "Root" }]);
 
   useEffect(() => {
     fileService.fetchContent(params.folderId).then(result => {
@@ -25,7 +27,19 @@ export default function FilesPage() {
     })
   }, [params]);
 
-  const [path, setPath] = useState<{ id?: string, name: string }[]>([{ name: "Root" }]);
+  const sort = (key: string, desc: boolean) => {
+    const [folders, files] = splitBy(data, (item) => !("size" in item));
+
+    if (key === "name") {
+      folders.sort((a, b) => a.name.localeCompare(b.name) * (desc ? -1 : 1));
+      files.sort((a, b) => a.name.localeCompare(b.name) * (desc ? -1 : 1));
+    } else if (key === "updated") {
+      folders.sort((a, b) => (a.updatedAt - b.updatedAt) * (desc ? -1 : 1));
+      files.sort((a, b) => (a.updatedAt - b.updatedAt) * (desc ? -1 : 1));
+    }
+
+    setData([...folders, ...files]);
+  }
 
   return (
     <>
@@ -66,7 +80,7 @@ export default function FilesPage() {
               </div>
             </div>
 
-            <DataTable columns={columns} data={data} setPath={setPath}></DataTable>
+            <DataTable columns={columns} data={data} setPath={setPath} onSort={sort}></DataTable>
 
             <div className="fixed bottom-0 w-full h-10 border-t px-4 py-2 text-sm text-muted-foreground">
               <span>{data.length} items</span>

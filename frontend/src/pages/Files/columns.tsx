@@ -1,7 +1,7 @@
 import type { File, Folder } from "@/lib/api/core";
 import { formatBytes, formatDate } from "@/lib/formatting";
 
-import { type ColumnDef, type Row } from "@tanstack/react-table";
+import { type ColumnDef, type Row, type RowData } from "@tanstack/react-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,14 +26,18 @@ import {
 
 export type ColumnItemType = File | Folder;
 
+declare module "@tanstack/react-table" {
+  interface ColumnMeta<TData extends RowData, TValue> {
+    sortKey?: string; 
+  }
+}
+
 export const columns: ColumnDef<ColumnItemType>[] = [
   {
     accessorKey: "name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
+    meta: { sortKey: "name" },
+    header: () => (
+      <Button variant="ghost">
         Name
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
@@ -65,11 +69,9 @@ export const columns: ColumnDef<ColumnItemType>[] = [
   },
   {
     accessorKey: "updatedAt",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
+    meta: { sortKey: "updated" },
+    header: () => (
+      <Button variant="ghost">
         Last modified
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
@@ -124,5 +126,5 @@ export const columns: ColumnDef<ColumnItemType>[] = [
         </DropdownMenuContent>
       </DropdownMenu>
     ),
-  },
+  }
 ];
