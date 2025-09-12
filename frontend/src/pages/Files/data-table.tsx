@@ -20,12 +20,20 @@ import {
 } from "@/components/ui/table"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { FolderPlus } from "lucide-react"
+
+declare module '@tanstack/react-table' {
+  interface TableMeta<TData> {
+    onShowDetails: (item: TData) => void;
+  }
+}
 
 interface DataTableProps {
   columns: ColumnDef<ColumnItemType>[]
   data: ColumnItemType[],
   onSort: (key: string, desc: boolean) => void,
-  setPath: React.Dispatch<React.SetStateAction<{ id?: string; name: string }[]>>
+  setPath: React.Dispatch<React.SetStateAction<{ id?: string; name: string }[]>>,
+  onShowDetails: (item: ColumnItemType) => void
 }
 
 type SortConfig = { key: string; desc: boolean } | null;
@@ -34,7 +42,8 @@ export function DataTable({
   columns,
   data,
   onSort,
-  setPath
+  setPath,
+  onShowDetails
 }: DataTableProps) {
   const navigate = useNavigate();
 
@@ -44,11 +53,14 @@ export function DataTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    meta: {
+      onShowDetails: onShowDetails
+    }
   });
 
   return (
     <div className="rounded-md px-4">
-      <ScrollArea className="w-full h-150">
+      <ScrollArea className="w-full h-180">
         <Table className="border-none w-full">
           <TableHeader className="sticky top-0 bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -104,12 +116,12 @@ export function DataTable({
                 </TableRow>
               ))
             ) : (
-              <TableRow className="border-t last:border-b-0">
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-left"
-                >
-                  No results.
+              <TableRow className="border-t last:border-b-0 cursor-default hover:bg-transparent">
+                <TableCell colSpan={columns.length}>
+                  <div className="flex flex-col items-center justify-center h-[60vh]">
+                    <FolderPlus className="mb-4 w-10 h-10 text-muted-foreground" />
+                    <span className="text-muted-foreground">This folder is empty</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

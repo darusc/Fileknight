@@ -16,6 +16,6 @@ export function formatBytes(bytes: number): string {
   return `${value.toFixed(2)} ${units[i]}`;
 }
 
-export function formatDate(timestamp: number, fmt: string): string {
+export function formatDate(timestamp: number, fmt: string = "dd MMM yyyy HH:ss"): string {
   return format(new Date(timestamp * 1000), fmt);
 }
