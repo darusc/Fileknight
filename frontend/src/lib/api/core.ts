@@ -128,7 +128,7 @@ export class Core {
     return this.request<T>('DELETE', endpoint, options);
   }
 
-  public download(endpoint: string, options?: AdditionalRequestOptions): Promise<Blob> {
+  public download(endpoint: string, options?: AdditionalRequestOptions): Promise<{ blob: Blob, filename: string }> {
     return this.requestDownload(endpoint, options);
   }
 
@@ -155,13 +155,19 @@ export class Core {
     const { query, body, headers } = info;
     const url = this.buildURL(endpoint, query);
 
+    const isFormdata = body instanceof FormData;
+
     const response = await fetch(url, {
       method: method,
       headers: {
-        'Content-Type': 'application/json',
+        ...(isFormdata ? {} : { 'Content-Type': 'application/json' }),
         ...headers
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: body
+        ? isFormdata
+          ? body
+          : JSON.stringify(body)
+        : undefined,
     });
 
     // Parse the JSON response into the APIResponse interface
@@ -180,12 +186,12 @@ export class Core {
     return (apiResponse.data || {}) as T;
   }
 
-  private async requestDownload(endpoint: string, info: AdditionalRequestOptions = {}): Promise<Blob> {
+  private async requestDownload(endpoint: string, info: AdditionalRequestOptions = {}): Promise<{ blob: Blob, filename: string }> {
     const { query, body, headers } = info;
     const url = this.buildURL(endpoint, query);
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...headers
@@ -201,8 +207,20 @@ export class Core {
       throw error;
     }
 
+    // Get the filename from the disposition header
+    const disposition = response.headers.get("content-disposition")
+    let filename = "download"
+
+    if (disposition && disposition.includes("filename=")) {
+      const match = disposition.match(/filename="?([^"]+)"?/)
+      if (match?.[1]) {
+        filename = decodeURIComponent(match[1])
+      }
+    }
+
     // Return the file blob received from the server
-    return await response.blob();
+    const blob = await response.blob();
+    return { blob: blob, filename: filename };
   }
 }
 

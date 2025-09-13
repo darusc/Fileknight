@@ -155,7 +155,7 @@ export class Files {
    *  folderIds: (optional) Array of folder ids to download
    * }
    */
-  public async download(fileIds: string[], folderIds: string[]): Promise<Blob> {
+  public async download(fileIds: string[], folderIds: string[]): Promise<{ blob: Blob, filename: string }> {
     return this.core.download("/api/files/download", {
       body: {
         fileIds: fileIds,

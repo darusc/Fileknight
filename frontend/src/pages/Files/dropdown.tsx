@@ -9,6 +9,9 @@ import {
 import { Copy, Download, Edit, Info, MoreHorizontal, Star, Trash } from "lucide-react";
 
 import type { ColumnItemType } from "./columns";
+import { SimpleDialog, type SimpleDialogSubmitData } from "./simple-dialog";
+import { useFiles } from "@/hooks/appContext";
+import { toast } from "sonner";
 
 interface MoreActionsProps {
   selected: ColumnItemType,
@@ -19,6 +22,24 @@ export function MoreActionsDropdown({
   selected,
   onShowMoreDetails
 }: MoreActionsProps) {
+
+  const fileService = useFiles();
+
+  const onRename = (data: SimpleDialogSubmitData) => {
+    const isFile = "size" in selected;
+    fileService.rename(selected, data.input)
+      .then(() => toast(`${isFile ? 'File' : 'Folder'} "${selected.name}" renamed to "${data.input}"`))
+      .catch(() => toast(`${isFile ? 'File' : 'Folder'} renaming failed`));
+  }
+
+  const onDownload = () => {
+    const isFile = "size" in selected;
+    const fileIds = isFile ? [selected.id] : [];
+    const folderIds = !isFile ? [selected.id] : [];
+    
+    fileService.download(fileIds, folderIds);
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -28,15 +49,22 @@ export function MoreActionsDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={onDownload}>
           <Download /> Download
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        {/* <Edit /> Rename */}
+        <SimpleDialog
+          title="Rename"
+          label="New name"
+          defaultValue={selected.name}
+          onSubmit={onRename}
+          trigger={
+            <DropdownMenuItem onSelect={e => e.preventDefault()}><Edit /> Rename</DropdownMenuItem>
+          }
+        />
         <DropdownMenuItem>
-          <Edit /> Rename
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Copy /> Copy
+          <Copy /> Duplicate
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Star /> Star
@@ -45,8 +73,8 @@ export function MoreActionsDropdown({
           <Info /> Details
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive">
-          <Trash className="text-destructive" /> Delete
+        <DropdownMenuItem>
+          <Trash className="text-destructive" /> Move to trash
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

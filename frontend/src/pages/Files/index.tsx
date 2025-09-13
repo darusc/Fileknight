@@ -7,12 +7,23 @@ import { splitBy } from "@/lib/utils"
 import Topbar from "@/components/layout/app-topbar"
 import { Input } from "@/components/ui/input"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { File, Folder, Plus, Search, Upload, X } from "lucide-react"
+import { FileUp, FolderUp, Plus, Search, Upload } from "lucide-react"
 
 import { DataTable } from "./data-table"
 import { columns, type ColumnItemType } from "./columns"
 import { Button } from "@/components/ui/button"
-import { formatBytes, formatDate } from "@/lib/formatting"
+import DetailsSidebar from "./details-sidebar"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { type SimpleDialogSubmitData, SimpleDialog } from "./simple-dialog"
+import { toast } from "sonner"
+import UploadDialog from "./upload-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function FilesPage() {
   const fileService = useFiles();
@@ -43,6 +54,12 @@ export default function FilesPage() {
     }
 
     setData([...folders, ...files]);
+  }
+
+  const onCreateFolder = (data: SimpleDialogSubmitData) => {
+    fileService.createFolder(data.input, params.folderId ?? null)
+      .then(() => toast("Folder created successfully"))
+      .catch(() => toast("Error creating new folder"));
   }
 
   return (
@@ -85,8 +102,41 @@ export default function FilesPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button><Plus />New Folder</Button>
-                <Button><Upload />Upload</Button>
+                <SimpleDialog
+                  title="Create new folder"
+                  label="Folder Name"
+                  defaultValue="New Folder"
+                  onSubmit={onCreateFolder}
+                  trigger={
+                    <Button><Plus />Create</Button>
+                  }
+                />
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button><Upload />Upload</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="flex flex-col">
+                    <UploadDialog
+                      type="file"
+                      parentId={params.folderId}
+                      trigger={
+                        <DropdownMenuItem onSelect={e => e.preventDefault()}>
+                          <FileUp /> Upload file
+                        </DropdownMenuItem>
+                      }
+                    />
+                    {/* <UploadDialog
+                      type="folder"
+                      parentId={params.folderId}
+                      trigger={
+                        <DropdownMenuItem onSelect={e => e.preventDefault()}>
+                          <FolderUp /> Upload folder
+                        </DropdownMenuItem>
+                      }
+                    /> */}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -105,38 +155,7 @@ export default function FilesPage() {
         </div>
 
         {selectedFile && (
-          <div className="w-80 flex-shrink-0 bg-sidebar shadow-lg transition-all duration-300 border-l z-10">
-            <div className="p-4">
-              <Button
-                variant="ghost" className="sticky"
-                onClick={() => setSelectedFile(null)}
-              >
-                <X />
-              </Button>
-              <div className="flex flex-col items-center">
-                {("size" in selectedFile) ? <File size="5rem" fill="currentColor" /> : <Folder size="5rem" fill="currentColor"/>}
-                <span className="mt-2">{selectedFile.name}</span>
-              </div>
-              <div className="flex flex-col gap-2 mt-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Type</span>
-                  <span>{("size" in selectedFile) ? "File" : "Folder"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Size</span>
-                  <span>{("size" in selectedFile) ? formatBytes(selectedFile.size) : "-"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last modified</span>
-                  <span>{formatDate(selectedFile.updatedAt)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created</span>
-                  <span>{formatDate(selectedFile.createdAt)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DetailsSidebar selectedFile={selectedFile} onClose={() => setSelectedFile(null)} />
         )}
       </div>
     </>
