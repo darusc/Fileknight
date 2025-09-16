@@ -1,46 +1,44 @@
-import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Route, Routes } from "react-router-dom";
+
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import NotFoundPage from "./pages/404";
+import PasswordReset from "./pages/PasswordReset";
+import Home from "./pages/Home";
+
+import { Toaster } from "./components/ui/sonner";
+import { ThemeProvider } from "./components/theme-provider";
+import { ThemeToggle } from "./components/theme-toggle";
+import { ProtectedRoute, RedirectAuthenticatedRoute } from "./components/ProtectedRoute";
+import Main from "./components/layout/main";
+import Files from "./pages/Files";
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    testApi();
-  }, []);
-
-  const testApi = async () => {
-    const data = await fetch('/api/test')
-      .then((response) => response.json())
-
-    console.log('API Test Response:', data);
-  }
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <Toaster position="top-center" richColors />
+      <ThemeToggle className="absolute top-2 right-2" />
+      <Routes>
+        {/* The user needs to be authenticated to access this routes
+            If not authenticated, they will be redirected to /login */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Main />}>
+            <Route path="/home" element={<Home/>} />
+            <Route path="/f/:folderId?" element={<Files/>} />
+            <Route path="/profile" element={<div>Profile</div>} />
+          </Route>
+        </Route>
+        {/* If the user is already authenticated, they will be redirected to /
+            Doing this to avoid creating new unnecessary sessions */}
+        <Route element={<RedirectAuthenticatedRoute to="/" />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/password-reset" element={<PasswordReset />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </ThemeProvider>
+  );
 }
 
 export default App

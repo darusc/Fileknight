@@ -2,22 +2,43 @@
 
 namespace Fileknight\EventSubscriber;
 
+use Doctrine\Common\EventSubscriber;
+use Fileknight\Entity\User;
 use Fileknight\Exception\Auth\InvalidJWTException;
 use Fileknight\Service\User\Exception\UserNotFoundException;
 use Fileknight\Service\User\UserService;
+use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTDecodedEvent;
-use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Lexik\Bundle\JWTAuthenticationBundle\Events;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-#[AsEventListener(
-    event: 'lexik_jwt_authentication.on_jwt_decoded',
-    method: 'onJWTDecoded'
-)]
-class JWTDecodedListener
+class JsonWebTokenSubscriber implements EventSubscriberInterface
 {
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            Events::JWT_DECODED => ['onJWTDecoded'],
+            Events::JWT_CREATED => ['onJWTCreated'],
+        ];
+    }
+
     public function __construct(
         private readonly UserService $userService,
     )
     {
+    }
+
+    /**
+     * Adds user id to JWT payload
+     */
+    public function onJWTCreated(JWTCreatedEvent $event): void
+    {
+        /** @var User $user */
+        $user = $event->getUser();
+
+        $payload = $event->getData();
+        $payload['user_id'] = $user->getId();
+        $event->setData($payload);
     }
 
     /**
