@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { MoreActionsDropdown } from "./dropdown";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export type ColumnItemType = File | Folder;
 
@@ -21,6 +22,23 @@ declare module "@tanstack/react-table" {
 }
 
 export const columns: ColumnDef<ColumnItemType>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        className="cursor-pointer"
+        checked={table.getIsAllRowsSelected()}
+        onCheckedChange={(checked) => table.toggleAllRowsSelected(!!checked)}
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        className="cursor-pointer"
+        checked={row.getIsSelected()}
+        onCheckedChange={(checked) => row.toggleSelected(!!checked)}
+      />
+    )
+  },
   {
     accessorKey: "name",
     meta: { sortKey: "name" },

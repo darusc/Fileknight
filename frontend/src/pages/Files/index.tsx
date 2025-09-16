@@ -7,14 +7,12 @@ import { splitBy } from "@/lib/utils"
 import Topbar from "@/components/layout/app-topbar"
 import { Input } from "@/components/ui/input"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { FileUp, FolderUp, Plus, Search, Upload } from "lucide-react"
+import { Archive, Delete, Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 
 import { DataTable } from "./data-table"
 import { columns, type ColumnItemType } from "./columns"
 import { Button } from "@/components/ui/button"
 import DetailsSidebar from "./details-sidebar"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { type SimpleDialogSubmitData, SimpleDialog } from "./simple-dialog"
 import { toast } from "sonner"
 import UploadDialog from "./upload-dialog"
@@ -34,7 +32,15 @@ export default function FilesPage() {
   const [data, setData] = useState<ColumnItemType[]>([]);
   const [path, setPath] = useState<{ id?: string, name: string }[]>([{ name: "Root" }]);
 
-  const [selectedFile, setSelectedFile] = useState<ColumnItemType | null>(null);
+  const [detailedItem, setDetailedItem] = useState<ColumnItemType | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<ColumnItemType[]>([]);
+  const [clearSelection, setClearSelection] = useState<boolean>(false);
+
+  useEffect(() => {
+    if(clearSelection) {
+      setClearSelection(false);
+    }
+  }, [clearSelection]);
 
   useEffect(() => {
     fileService.fetchContent(params.folderId).then(result => {
@@ -60,6 +66,11 @@ export default function FilesPage() {
     fileService.createFolder(data.input, params.folderId ?? null)
       .then(() => toast("Folder created successfully"))
       .catch(() => toast("Error creating new folder"));
+  }
+
+  const onDownloadSelected = () => {
+    const [folders, files] = splitBy(selectedFiles, (item) => !("size" in item));
+    fileService.download(files.map(f => f.id), folders.map(f => f.id));
   }
 
   return (
@@ -140,12 +151,54 @@ export default function FilesPage() {
               </div>
             </div>
 
+            {selectedFiles.length > 0 && (
+              <div className="flex items-center gap-2 bg-surface px-4 py-2 border-b shadow-sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setClearSelection(true)}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                </Button>
+                <span className="text-sm text-muted-foreground font-medium h-5 pr-4 border-r border-secondary">
+                  {selectedFiles.length} selected
+                </span>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={onDownloadSelected}
+                >
+                  <Download className="w-4 h-4 mr-1" /> Download
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => console.log("Move to Bin", selectedFiles)}
+                >
+                  <Trash className="w-4 h-4 mr-1" /> Move to Bin
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => console.log("Star", selectedFiles)}
+                >
+                  <Star className="w-4 h-4 mr-1" /> Star
+                </Button>
+              </div>
+            )}
+
             <DataTable
               columns={columns}
               data={data}
               setPath={setPath}
               onSort={sort}
-              onShowDetails={setSelectedFile}
+              onShowDetails={item => setDetailedItem(item)}
+              onSelectedRowsChange={rows => setSelectedFiles(rows)}
+              clearSelectedRows={clearSelection}
             />
 
             <div className="fixed bottom-0 w-full h-10 border-t px-4 py-2 text-sm text-muted-foreground">
@@ -154,8 +207,8 @@ export default function FilesPage() {
           </div>
         </div>
 
-        {selectedFile && (
-          <DetailsSidebar selectedFile={selectedFile} onClose={() => setSelectedFile(null)} />
+        {detailedItem && (
+          <DetailsSidebar selectedFile={detailedItem} onClose={() => setDetailedItem(null)} />
         )}
       </div>
     </>

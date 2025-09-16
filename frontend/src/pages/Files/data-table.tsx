@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import type { ColumnItemType } from "./columns"
@@ -33,7 +33,9 @@ interface DataTableProps {
   data: ColumnItemType[],
   onSort: (key: string, desc: boolean) => void,
   setPath: React.Dispatch<React.SetStateAction<{ id?: string; name: string }[]>>,
-  onShowDetails: (item: ColumnItemType) => void
+  onShowDetails: (item: ColumnItemType) => void,
+  onSelectedRowsChange: (rows: ColumnItemType[]) => void,
+  clearSelectedRows: boolean
 }
 
 type SortConfig = { key: string; desc: boolean } | null;
@@ -43,11 +45,14 @@ export function DataTable({
   data,
   onSort,
   setPath,
-  onShowDetails
+  onShowDetails,
+  onSelectedRowsChange,
+  clearSelectedRows
 }: DataTableProps) {
   const navigate = useNavigate();
 
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   const table = useReactTable({
     data,
@@ -55,8 +60,27 @@ export function DataTable({
     getCoreRowModel: getCoreRowModel(),
     meta: {
       onShowDetails: onShowDetails
-    }
+    },
+    state: {
+      rowSelection: rowSelection
+    },
+    onRowSelectionChange: setRowSelection,
+    getRowId: (row) => row.id
   });
+
+  useEffect(() => {
+    if(onSelectedRowsChange) {
+      const selectedRows = table.getSelectedRowModel().flatRows.map(r => r.original);
+      onSelectedRowsChange(selectedRows);
+    }
+  }, [rowSelection]);
+
+  useEffect(() => {
+    if(clearSelectedRows) {
+      setRowSelection({});
+      onSelectedRowsChange([]);
+    }
+  }, [clearSelectedRows]);
 
   return (
     <div className="rounded-md px-4">
@@ -68,7 +92,11 @@ export function DataTable({
                 {headerGroup.headers.map((header, idx) => (
                   <TableHead
                     key={header.id}
-                    className={`${idx === 0 ? "text-left" : "text-center"}`}
+                    className={`
+                        ${idx == 0 ? "w-[24px] pl-2" : ""}
+                        ${idx == 1 ? "w-1/2 pl-4" : "text-right"} 
+                        py-2
+                      `}
                     onClick={() => {
                       const key = header.column.columnDef.meta?.sortKey;
                       if (key) {
@@ -107,8 +135,11 @@ export function DataTable({
                   {row.getVisibleCells().map((cell, idx) => (
                     <TableCell
                       key={cell.id}
-                      className={`${idx === 0 ? "w-1/2 text-left pl-5" : "w-1/6 text-center"
-                        }`}
+                      className={`
+                        ${idx == 0 ? "w-[24px] pl-2" : ""}
+                        ${idx == 1 ? "w-1/2 pl-4" : "text-right"} 
+                        py-2
+                      `}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
