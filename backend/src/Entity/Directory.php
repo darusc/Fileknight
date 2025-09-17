@@ -167,4 +167,23 @@ class Directory
         }
         return $current;
     }
+
+    /**
+     * Get a list containing all the directory's ancestors
+     * @return array Each element is [id => '', name => '']
+     */
+    public function getAncestors(): array
+    {
+        $ancestors = [];
+        $current = $this;
+
+        while ($current->getParent() !== null) {
+            $current = $current->getParent();
+            $ancestors[] = [
+                'id' => $current->getId(),
+                'name' => $current->getName(),
+            ];
+        }
+        return $ancestors;
+    }
 }

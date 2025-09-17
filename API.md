@@ -14,6 +14,7 @@
   - [Upload file](#upload-file)
   - [Update file](#update-file---rename--move)
   - [Delete file](#delete-file)
+  - [Get folder metadata](#get-folder-metadata)
   - [Create folder](#create-folder)
   - [Update folder](#update-folder---rename--move)
   - [Delete folder](#delete-folder)
@@ -189,6 +190,8 @@ Sample response:
     "success": true,
     "message": "SUCCESS",
     "data": {
+        "id":
+        "name":
         "directories": [
             {
                 "id":
@@ -274,6 +277,23 @@ Sample response:
     "message": "File {id} deleted successfully.",
     "data": [],
     "status": 200
+}
+```
+
+### Get folder metadata
+```
+GET /api/files/folders/{id}
+```
+```
+Sample response:
+{
+    "ancestors": [
+      {
+        "id":
+        "name":
+      },
+      ...
+    }
 }
 ```
 
