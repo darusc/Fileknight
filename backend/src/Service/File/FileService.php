@@ -76,10 +76,12 @@ readonly class FileService
     public function upload(Directory $directory, UploadedFile $uploadedFile): File
     {
         $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $mimeType = $uploadedFile->getMimeType();
 
         $file = new File();
         $file->setName($originalFilename);
         $file->setDirectory($directory);
+        $file->setMimeType($mimeType);
         $file->setExtension($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
         $file->setSize($uploadedFile->getSize());
 

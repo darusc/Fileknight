@@ -205,6 +205,7 @@ Sample response:
                 "id":
                 "name":
                 "size": 
+                "mimeType":
                 "extension": 
                 "createdAt": 
                 "updatedAt":
