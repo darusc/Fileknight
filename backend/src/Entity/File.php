@@ -24,6 +24,9 @@ class File
     #[ORM\Column(type: 'string', length: 255)]
     private string $name;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $mimeType;
+
     #[ORM\Column(type: 'string', length: 15)]
     private string $extension;
 
@@ -58,6 +61,16 @@ class File
     public function setName(string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getMimeType(): ?string
+    {
+        return $this->mimeType;
+    }
+
+    public function setMimeType(?string $mimeType): void
+    {
+        $this->mimeType = $mimeType;
     }
 
     public function getExtension(): string
