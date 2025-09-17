@@ -36,6 +36,20 @@ class FolderController extends AbstractController
     }
 
     /**
+     * Get folder metadata
+     * ```
+     * GET /api/files/folders/{folderId}
+     * ```
+     * @throws FolderNotFoundException
+     */
+    #[Route(path: '/{folderId}', name: 'api.files.folders.metadata', methods: ['GET'])]
+    public function get(Request $request, string $folderId): JsonResponse
+    {
+        $folder = $this->folderService->get($folderId);
+        return ApiResponse::success(['ancestors' => $folder->getAncestors()]);
+    }
+
+    /**
      *  Creates a new folder.
      *
      * ```

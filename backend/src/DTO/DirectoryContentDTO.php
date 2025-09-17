@@ -19,8 +19,10 @@ readonly class DirectoryContentDTO implements JsonSerializable
      * @param DirectoryDTO[] $directories
      */
     public function __construct(
-        public array $files,
-        public array $directories,
+        public string $id,
+        public string $name,
+        public array  $files,
+        public array  $directories,
     )
     {
     }
@@ -33,6 +35,8 @@ readonly class DirectoryContentDTO implements JsonSerializable
     public function toArray(): array
     {
         return [
+            'id' => $this->id,
+            'name' => $this->name,
             'directories' => array_map(function (DirectoryDTO $dto) {
                 return $dto->toArray();
             }, $this->directories),

@@ -64,7 +64,7 @@ readonly class FileService
             $directories[] = DirectoryDto::fromEntity($dir);
         }
 
-        return new DirectoryContentDTO($files, $directories);
+        return new DirectoryContentDTO($directory->getId(), $directory->getName(), $files, $directories);
     }
 
     /**
