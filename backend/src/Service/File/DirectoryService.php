@@ -2,8 +2,10 @@
 
 namespace Fileknight\Service\File;
 
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\Entity\Directory;
+use Fileknight\Entity\File;
 use Fileknight\Entity\User;
 use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Service\File\Exception\FolderNotFoundException;
@@ -16,8 +18,8 @@ readonly class DirectoryService
     public function __construct(
         private EntityManagerInterface $entityManager,
         private DirectoryRepository    $directoryRepository,
+        private FileSystem             $filesystem,
         private FileService            $fileService,
-        private FileSystem             $filesystem
     )
     {
     }
@@ -139,18 +141,44 @@ readonly class DirectoryService
     }
 
     /**
-     * Recursively delete a directory
+     * Mark the directory as binned
      * @param Directory $directory
      * @return void
      */
     public function delete(Directory $directory): void
     {
-        foreach ($directory->getChildren() as $childDirectory) {
-            $this->delete($childDirectory);
+        $directory->setDeletedAt(DateTimeImmutable::createFromFormat('U', (string)time()));
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Restore directory from bin
+     */
+    public function restore(Directory $directory): void
+    {
+        $directory->setDeletedAt(null);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Recursively delete a folder and its children from the filesystem
+     * and all associated database entries
+     */
+    public function hardDelete(Directory $directory): void
+    {
+        // Fail if the directory was not added to bin before
+        if($directory->getDeletedAt() === null) {
+            return;
         }
 
+        /** @var Directory $child */
+        foreach ($directory->getChildren() as $child) {
+            $this->hardDelete($child);
+        }
+
+        /** @var File $file */
         foreach ($directory->getFiles() as $file) {
-            $this->fileService->delete($file);
+            $this->fileService->hardDelete($file, true);
         }
 
         $this->entityManager->remove($directory);

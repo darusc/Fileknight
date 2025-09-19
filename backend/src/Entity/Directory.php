@@ -5,6 +5,7 @@ namespace Fileknight\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Fileknight\Entity\Traits\DeletedTrait;
 use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\DirectoryRepository;
 use Ramsey\Uuid\Uuid;
@@ -14,6 +15,7 @@ use Ramsey\Uuid\Uuid;
 class Directory
 {
     use TimestampTrait;
+    use DeletedTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'NONE')]
