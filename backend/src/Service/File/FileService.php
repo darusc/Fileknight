@@ -2,6 +2,7 @@
 
 namespace Fileknight\Service\File;
 
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\DTO\DirectoryContentDTO;
 use Fileknight\DTO\DirectoryDTO;
@@ -121,10 +122,34 @@ readonly class FileService
     }
 
     /**
-     * Delete file
+     * Soft delete file. (move to bin)
      */
     public function delete(File $file): void
     {
+        $file->setDeletedAt(DateTimeImmutable::createFromFormat('U', (string)time()));
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Restore file from bin
+     */
+    public function restore(File $file): void
+    {
+        $file->setDeletedAt(null);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Hard delete file. Removes from file system and the database entry
+     */
+    public function hardDelete(File $file, bool $binnedParent = false): void
+    {
+        // Fail if the file was not added to bin before
+        // and it is not a descendent of a binned directory
+        if(!$binnedParent && $file->getDeletedAt() === null) {
+            return;
+        }
+
         $this->filesystem->remove(static::getPhysicalPath($file));
 
         $this->entityManager->remove($file);

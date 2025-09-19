@@ -3,6 +3,7 @@
 namespace Fileknight\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Fileknight\Entity\Traits\DeletedTrait;
 use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\FileRepository;
 use Ramsey\Uuid\Uuid;
@@ -12,6 +13,7 @@ use Ramsey\Uuid\Uuid;
 class File
 {
     use TimestampTrait;
+    use DeletedTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "NONE")]

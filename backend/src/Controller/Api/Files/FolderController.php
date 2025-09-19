@@ -50,7 +50,7 @@ class FolderController extends AbstractController
     }
 
     /**
-     *  Creates a new folder.
+     * Creates a new folder.
      *
      * ```
      * POST /api/files/folders
@@ -111,7 +111,8 @@ class FolderController extends AbstractController
     }
 
     /**
-     * Recursively delete a folder
+     * Soft delete a folder (move to bin).
+     * Children are not marked as binned.
      *
      * ```
      * DELETE /api/files/folders/{id}
@@ -127,9 +128,6 @@ class FolderController extends AbstractController
 
         $this->folderService->delete($directory);
 
-        return ApiResponse::success(
-            [],
-            "Folder $id deleted successfully.",
-        );
+        return ApiResponse::success([], "Folder $id moved to bin.");
     }
 }
