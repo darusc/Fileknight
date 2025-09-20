@@ -46,4 +46,8 @@ export class FileService {
     a.click();
     a.remove();
   }
+
+  public async getFolderMetadata(folderId: string) {
+    return this.files.getMetadata(folderId);
+  }
 }

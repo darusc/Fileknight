@@ -166,4 +166,15 @@ export class Files {
       }
     });
   }
+
+  /**
+   * Get folder metadata
+   * 
+   * ```
+   * GET /api/files/folders/{id}
+   * ```
+   */
+  public async getMetadata(folderId: string) {
+    return this.core.get<{ ancestors: [] }>(`/api/files/folders/${folderId}`)
+  }
 }

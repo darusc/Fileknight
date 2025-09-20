@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 
 import { useFiles } from "@/hooks/appContext"
 import { splitBy } from "@/lib/utils"
@@ -7,7 +7,7 @@ import { splitBy } from "@/lib/utils"
 import Topbar from "@/components/layout/app-topbar"
 import { Input } from "@/components/ui/input"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { Archive, Delete, Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
+import { Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 
 import { DataTable } from "./data-table"
 import { columns, type ColumnItemType } from "./columns"
@@ -24,13 +24,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function FilesPage() {
+  const navigate = useNavigate();
   const fileService = useFiles();
 
   const params = useParams<{ folderId?: string }>();
 
   const [query, setQuery] = useState("")
   const [data, setData] = useState<ColumnItemType[]>([]);
-  const [path, setPath] = useState<{ id?: string, name: string }[]>([{ name: "Root" }]);
+  const [path, setPath] = useState<{ id?: string, name: string }[]>([{name: 'Root'}]);
 
   const [detailedItem, setDetailedItem] = useState<ColumnItemType | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<ColumnItemType[]>([]);
@@ -45,7 +46,12 @@ export default function FilesPage() {
   useEffect(() => {
     fileService.fetchContent(params.folderId).then(result => {
       setData([...result.directories, ...result.files]);
-    })
+    });
+    if(params.folderId) {
+      fileService.getFolderMetadata(params.folderId).then(result => {
+        setPath(result.ancestors);
+      });
+    }
   }, [params]);
 
   const sort = (key: string, desc: boolean) => {
@@ -80,12 +86,7 @@ export default function FilesPage() {
           <BreadcrumbList>
             {path.map((folder, idx) => (
               <BreadcrumbItem key={idx} className={idx === 0 ? "text-primary" : ""}>
-                <BreadcrumbLink
-                  href="#"
-                  onClick={(e) => {
-                    // TODO...
-                  }}
-                >
+                <BreadcrumbLink onClick={() => navigate(`/f/${folder.id ?? ''}`)}>
                   {folder.name}
                 </BreadcrumbLink>
                 {idx < path.length - 1 && <BreadcrumbSeparator />}
