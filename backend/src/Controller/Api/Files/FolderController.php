@@ -36,7 +36,21 @@ class FolderController extends AbstractController
     }
 
     /**
-     *  Creates a new folder.
+     * Get folder metadata
+     * ```
+     * GET /api/files/folders/{folderId}
+     * ```
+     * @throws FolderNotFoundException
+     */
+    #[Route(path: '/{folderId}', name: 'api.files.folders.metadata', methods: ['GET'])]
+    public function get(Request $request, string $folderId): JsonResponse
+    {
+        $folder = $this->folderService->get($folderId);
+        return ApiResponse::success(['ancestors' => $folder->getAncestors()]);
+    }
+
+    /**
+     * Creates a new folder.
      *
      * ```
      * POST /api/files/folders
@@ -97,7 +111,8 @@ class FolderController extends AbstractController
     }
 
     /**
-     * Recursively delete a folder
+     * Soft delete a folder (move to bin).
+     * Children are not marked as binned.
      *
      * ```
      * DELETE /api/files/folders/{id}
@@ -113,9 +128,6 @@ class FolderController extends AbstractController
 
         $this->folderService->delete($directory);
 
-        return ApiResponse::success(
-            [],
-            "Folder $id deleted successfully.",
-        );
+        return ApiResponse::success([], "Folder $id moved to bin.");
     }
 }

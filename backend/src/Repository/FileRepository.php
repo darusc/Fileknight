@@ -8,6 +8,9 @@ use Fileknight\Entity\Directory;
 use Fileknight\Entity\File;
 use Fileknight\Entity\User;
 
+/**
+ * @extends ServiceEntityRepository<File>
+ */
 class FileRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $managerRegistry)
@@ -48,5 +51,19 @@ class FileRepository extends ServiceEntityRepository
         }
 
         return $index;
+    }
+
+    /**
+     * @return File[]
+     */
+    public function findAllBinned(): array {
+        $query = $this->createQueryBuilder('f')
+            ->select('*')
+            ->where('f.deletedAt IS NOT NULL')
+            ->addOrderBy('f.deletedAt', 'DESC')
+            ->addOrderBy('f.name', 'ASC')
+            ->getQuery();
+
+        return $query->getResult();
     }
 }

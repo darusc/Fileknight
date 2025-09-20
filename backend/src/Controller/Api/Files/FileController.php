@@ -119,7 +119,7 @@ class FileController extends AbstractController
     }
 
     /**
-     *  Delete a file
+     * Move file to bin
      *
      * ```
      * DELETE /api/files/{id}
@@ -135,6 +135,6 @@ class FileController extends AbstractController
 
         $this->fileService->delete($file);
 
-        return ApiResponse::success([], "File $id deleted successfully.");
+        return ApiResponse::success([], "File $id moved to bin.");
     }
 }

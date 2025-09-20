@@ -5,6 +5,7 @@ namespace Fileknight\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Fileknight\Entity\Traits\DeletedTrait;
 use Fileknight\Entity\Traits\TimestampTrait;
 use Fileknight\Repository\DirectoryRepository;
 use Ramsey\Uuid\Uuid;
@@ -14,6 +15,7 @@ use Ramsey\Uuid\Uuid;
 class Directory
 {
     use TimestampTrait;
+    use DeletedTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'NONE')]
@@ -166,5 +168,24 @@ class Directory
             $current = $current->getParent();
         }
         return $current;
+    }
+
+    /**
+     * Get a list containing all the directory's ancestors
+     * @return array Each element is [id => '', name => '']
+     */
+    public function getAncestors(): array
+    {
+        $ancestors = [];
+        $current = $this;
+
+        while ($current->getParent() !== null) {
+            $current = $current->getParent();
+            $ancestors[] = [
+                'id' => $current->getId(),
+                'name' => $current->getName(),
+            ];
+        }
+        return $ancestors;
     }
 }
