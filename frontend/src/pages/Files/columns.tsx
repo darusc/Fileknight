@@ -65,11 +65,11 @@ export const columns: ColumnDef<ColumnItemType>[] = [
     }
   },
   {
-    accessorKey: "extension",
+    accessorKey: "mimeType",
     header: "Type",
     cell: ({ row }) => {
       const data = row.original;
-      if ("extension" in data) return data.extension;
+      if ("mimeType" in data) return data.mimeType;
       return "Folder";
     },
   },
