@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 
 import { useFiles } from "@/hooks/appContext"
 import { splitBy } from "@/lib/utils"
@@ -7,6 +8,7 @@ import { splitBy } from "@/lib/utils"
 import Topbar from "@/components/layout/app-topbar"
 import { Input } from "@/components/ui/input"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 import { Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 
 import { DataTable } from "./data-table"
@@ -25,12 +27,14 @@ import {
 
 export default function FilesPage() {
   const navigate = useNavigate();
+  const navigate = useNavigate();
   const fileService = useFiles();
 
   const params = useParams<{ folderId?: string }>();
 
   const [query, setQuery] = useState("")
   const [data, setData] = useState<ColumnItemType[]>([]);
+  const [path, setPath] = useState<{ id?: string, name: string }[]>([{name: 'Root'}]);
   const [path, setPath] = useState<{ id?: string, name: string }[]>([{name: 'Root'}]);
 
   const [detailedItem, setDetailedItem] = useState<ColumnItemType | null>(null);
@@ -49,8 +53,11 @@ export default function FilesPage() {
     });
     if(params.folderId) {
       fileService.getFolderMetadata(params.folderId).then(result => {
-        setPath(result.ancestors);
+        console.log(result);
+        setPath([...result.ancestors.reverse(), {id: params.folderId, name: ''}]);
       });
+    } else {
+      setPath([{name: 'Root'}]);
     }
   }, [params]);
 
@@ -86,6 +93,7 @@ export default function FilesPage() {
           <BreadcrumbList>
             {path.map((folder, idx) => (
               <BreadcrumbItem key={idx} className={idx === 0 ? "text-primary" : ""}>
+                <BreadcrumbLink onClick={() => navigate(`/f/${folder.id ?? ''}`)}>
                 <BreadcrumbLink onClick={() => navigate(`/f/${folder.id ?? ''}`)}>
                   {folder.name}
                 </BreadcrumbLink>
@@ -195,7 +203,6 @@ export default function FilesPage() {
             <DataTable
               columns={columns}
               data={data}
-              setPath={setPath}
               onSort={sort}
               onShowDetails={item => setDetailedItem(item)}
               onSelectedRowsChange={rows => setSelectedFiles(rows)}

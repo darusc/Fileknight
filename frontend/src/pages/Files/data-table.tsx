@@ -32,7 +32,6 @@ interface DataTableProps {
   columns: ColumnDef<ColumnItemType>[]
   data: ColumnItemType[],
   onSort: (key: string, desc: boolean) => void,
-  setPath: React.Dispatch<React.SetStateAction<{ id?: string; name: string }[]>>,
   onShowDetails: (item: ColumnItemType) => void,
   onSelectedRowsChange: (rows: ColumnItemType[]) => void,
   clearSelectedRows: boolean
@@ -44,7 +43,6 @@ export function DataTable({
   columns,
   data,
   onSort,
-  setPath,
   onShowDetails,
   onSelectedRowsChange,
   clearSelectedRows
@@ -128,7 +126,6 @@ export function DataTable({
                     const original = row.original as ColumnItemType;
                     if (!("size" in original)) {
                       navigate(`/f/${original.id}`);
-                      setPath(prev => [...prev, { id: original.id, name: original.name }]);
                     }
                   }}
                 >

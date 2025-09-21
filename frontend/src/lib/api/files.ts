@@ -175,6 +175,10 @@ export class Files {
    * ```
    */
   public async getMetadata(folderId: string) {
-    return this.core.get<{ ancestors: [] }>(`/api/files/folders/${folderId}`)
+    return this.core.get<{ ancestors: [] }>(`/api/files/folders/${folderId}`, {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    })
   }
 }
