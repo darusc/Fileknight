@@ -90,7 +90,6 @@ export default function FilesPage() {
             {path.map((folder, idx) => (
               <BreadcrumbItem key={idx} className={idx === 0 ? "text-primary" : ""}>
                 <BreadcrumbLink onClick={() => navigate(`/f/${folder.id ?? ''}`)}>
-                <BreadcrumbLink onClick={() => navigate(`/f/${folder.id ?? ''}`)}>
                   {folder.name}
                 </BreadcrumbLink>
                 {idx < path.length - 1 && <BreadcrumbSeparator />}
