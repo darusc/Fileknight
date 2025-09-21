@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { useNavigate, useParams } from "react-router-dom"
 
 import { useFiles } from "@/hooks/appContext"
 import { splitBy } from "@/lib/utils"
@@ -8,7 +7,6 @@ import { splitBy } from "@/lib/utils"
 import Topbar from "@/components/layout/app-topbar"
 import { Input } from "@/components/ui/input"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 import { Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 
 import { DataTable } from "./data-table"
@@ -27,14 +25,12 @@ import {
 
 export default function FilesPage() {
   const navigate = useNavigate();
-  const navigate = useNavigate();
   const fileService = useFiles();
 
   const params = useParams<{ folderId?: string }>();
 
   const [query, setQuery] = useState("")
   const [data, setData] = useState<ColumnItemType[]>([]);
-  const [path, setPath] = useState<{ id?: string, name: string }[]>([{name: 'Root'}]);
   const [path, setPath] = useState<{ id?: string, name: string }[]>([{name: 'Root'}]);
 
   const [detailedItem, setDetailedItem] = useState<ColumnItemType | null>(null);
