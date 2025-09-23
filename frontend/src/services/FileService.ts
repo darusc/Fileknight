@@ -47,7 +47,21 @@ export class FileService {
     a.remove();
   }
 
+  public moveToBin(files: string[], folders: string[]) {
+    for (const file of files) {
+      this.files.moveFileToBin(file);
+    }
+
+    for (const folder of folders) {
+      this.files.moveFolderToBin(folder);
+    }
+  }
+
   public async getFolderMetadata(folderId: string) {
     return this.files.getMetadata(folderId);
+  }
+
+  public async fetchBin(): Promise<FolderContent> {
+    return this.files.listBin();
   }
 }

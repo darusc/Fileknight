@@ -181,4 +181,49 @@ export class Files {
       }
     })
   }
+
+  /**
+   * Get all binned items
+   * 
+   * ```
+   * GET /api/bin
+   * ```
+   */
+  public async listBin() {
+    return await this.core.get<FolderContent>("/api/bin", {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Move file to bin
+   * 
+   * ```
+   * DELETE /api/files/{id}
+   * ```
+   */
+  public async moveFileToBin(id: string) {
+    return await this.core.delete<void>(`/api/files/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Move folder to bin
+   * 
+   * ```
+   * DELETE /api/files/folders/{id}
+   * ```
+   */
+  public async moveFolderToBin(id: string) {
+    return await this.core.delete<void>(`/api/files/folders/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
 }

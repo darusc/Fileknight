@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 
-import { DataTable } from "./data-table"
+import { DataTable } from "../../components/data-table"
 import { columns, type ColumnItemType } from "./columns"
 import { Button } from "@/components/ui/button"
 import DetailsSidebar from "./details-sidebar"
@@ -80,6 +80,11 @@ export default function FilesPage() {
   const onDownloadSelected = () => {
     const [folders, files] = splitBy(selectedFiles, (item) => !("size" in item));
     fileService.download(files.map(f => f.id), folders.map(f => f.id));
+  }
+
+  const onMoveToBinSelected = () => {
+    const [folders, files] = splitBy(selectedFiles, (item) => !("size" in item));
+    fileService.moveToBin(files.map(f => f.id), folders.map(f => f.id))
   }
 
   return (
@@ -180,7 +185,7 @@ export default function FilesPage() {
                   variant="ghost"
                   size="sm"
                   className="text-muted-foreground"
-                  onClick={() => console.log("Move to Bin", selectedFiles)}
+                  onClick={onMoveToBinSelected}
                 >
                   <Trash className="w-4 h-4 mr-1" /> Move to Bin
                 </Button>

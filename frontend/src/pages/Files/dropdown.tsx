@@ -40,6 +40,14 @@ export function MoreActionsDropdown({
     fileService.download(fileIds, folderIds);
   }
 
+  const onMoveToBin = () => {
+    const isFile = "size" in selected;
+    const fileIds = isFile ? [selected.id] : [];
+    const folderIds = !isFile ? [selected.id] : [];
+
+    fileService.moveToBin(fileIds, folderIds);
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -73,7 +81,7 @@ export function MoreActionsDropdown({
           <Info /> Details
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={onMoveToBin}>
           <Trash className="text-destructive" /> Move to trash
         </DropdownMenuItem>
       </DropdownMenuContent>

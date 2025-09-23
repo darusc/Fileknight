@@ -240,6 +240,7 @@ export interface File {
   mimeType: string;
   createdAt: number;
   updatedAt: number;
+  deletedAt: number;
 }
 
 export interface Folder {
@@ -247,6 +248,7 @@ export interface Folder {
   name: string;
   createdAt: number;
   updatedAt: number;
+  deletedAt: number;
 }
 
 export interface FolderContent {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import type { ColumnItemType } from "./columns"
+import type { ColumnItemType } from "../pages/Files/columns"
 
 import {
   type ColumnDef,
