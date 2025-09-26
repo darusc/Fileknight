@@ -57,6 +57,14 @@ export class FileService {
     }
   }
 
+  public restoreFromBin(files: string[], folders: string[]) {
+    this.files.restoreFromBin(files, folders);
+  }
+
+  public deleteFromBin(files: string[], folders: string[]) {
+    this.files.deleteFromBin(files, folders);
+  }
+
   public async getFolderMetadata(folderId: string) {
     return this.files.getMetadata(folderId);
   }

@@ -1,16 +1,14 @@
+import { useFiles } from "@/hooks/appContext";
+import type { ColumnItemType } from "./columns";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Copy, Download, Edit, Info, MoreHorizontal, RotateCcw, Star, Trash } from "lucide-react";
-
-import type { ColumnItemType } from "./columns";
-import { useFiles } from "@/hooks/appContext";
-import { toast } from "sonner";
+import { MoreHorizontal, RotateCcw, Trash } from "lucide-react";
 
 interface MoreActionsProps {
   selected: ColumnItemType,
@@ -24,6 +22,22 @@ export function MoreActionsDropdown({
 
   const fileService = useFiles();
 
+  const onRestore = () => {
+    const isFile = "size" in selected;
+    const fileIds = isFile ? [selected.id] : [];
+    const folderIds = !isFile ? [selected.id] : [];
+
+    fileService.restoreFromBin(fileIds, folderIds);
+  }
+
+  const onDelete = () => {
+    const isFile = "size" in selected;
+    const fileIds = isFile ? [selected.id] : [];
+    const folderIds = !isFile ? [selected.id] : [];
+
+    fileService.deleteFromBin(fileIds, folderIds);
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -33,10 +47,10 @@ export function MoreActionsDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem>
-          <RotateCcw/> Restore
+        <DropdownMenuItem onClick={onRestore}>
+          <RotateCcw /> Restore
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={onDelete}>
           <Trash className="text-destructive" /> Delete Permanentely
         </DropdownMenuItem>
       </DropdownMenuContent>

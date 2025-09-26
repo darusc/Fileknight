@@ -226,4 +226,50 @@ export class Files {
       }
     });
   }
+
+  /**
+   * Restore files and folders from bin
+   * 
+   * ```
+   * POST /api/bin/restore
+   * {
+   *  fileIds:   (optional) Array of file ids to restore
+   *  folderIds: (optional) Array of folder ids to restore
+   * }
+   * ```
+   */
+  public async restoreFromBin(files: string[], folders: string[]) {
+    await this.core.post<void>('/api/bin/restore', {
+      body: {
+        fileIds: files,
+        folderIds: folders
+      },
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Permanently deletes files and folders from bin
+   * 
+   * ```
+   * POST /api/bin/delete
+   * {
+   *  fileIds:   (optional) Array of file ids to restore
+   *  folderIds: (optional) Array of folder ids to restore
+   * }
+   * ```
+   */
+  public async deleteFromBin(files: string[], folders: string[]) {
+    await this.core.post<void>('/api/bin/delete', {
+      body: {
+        fileIds: files,
+        folderIds: folders
+      },
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
 }
