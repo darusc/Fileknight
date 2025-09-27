@@ -34,7 +34,8 @@ interface DataTableProps {
   onSort: (key: string, desc: boolean) => void,
   onShowDetails: (item: ColumnItemType) => void,
   onSelectedRowsChange: (rows: ColumnItemType[]) => void,
-  clearSelectedRows: boolean
+  clearSelectedRows: boolean,
+  navigateOnRowDoubleClick?: boolean
 }
 
 type SortConfig = { key: string; desc: boolean } | null;
@@ -45,7 +46,8 @@ export function DataTable({
   onSort,
   onShowDetails,
   onSelectedRowsChange,
-  clearSelectedRows
+  clearSelectedRows,
+  navigateOnRowDoubleClick
 }: DataTableProps) {
   const navigate = useNavigate();
 
@@ -124,7 +126,7 @@ export function DataTable({
                   className="border-t last:border-b-0"
                   onDoubleClick={() => {
                     const original = row.original as ColumnItemType;
-                    if (!("size" in original)) {
+                    if (navigateOnRowDoubleClick && !("size" in original)) {
                       navigate(`/f/${original.id}`);
                     }
                   }}

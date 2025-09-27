@@ -207,6 +207,7 @@ export default function FilesPage() {
               onShowDetails={item => setDetailedItem(item)}
               onSelectedRowsChange={rows => setSelectedFiles(rows)}
               clearSelectedRows={clearSelection}
+              navigateOnRowDoubleClick={true}
             />
 
             <div className="fixed bottom-0 w-full h-10 border-t px-4 py-2 text-sm text-muted-foreground">
