@@ -56,13 +56,17 @@ readonly class FileService
         $files = [];
         /** @var File $file */
         foreach ($directory->getFiles() as $file) {
-            $files[] = FileDto::fromEntity($file);
+            if($file->getDeletedAt() == null) {
+                $files[] = FileDto::fromEntity($file);
+            }
         }
 
         $directories = [];
         /** @var Directory $dir */
         foreach ($directory->getChildren() as $dir) {
-            $directories[] = DirectoryDto::fromEntity($dir);
+            if($dir->getDeletedAt() == null) {
+                $directories[] = DirectoryDto::fromEntity($dir);
+            }
         }
 
         return new DirectoryContentDTO($directory->getId(), $directory->getName(), $files, $directories);
