@@ -14,9 +14,7 @@ use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Repository\FileRepository;
 use Fileknight\Response\ApiResponse;
 use Fileknight\Service\Access\AccessGuardService;
-use Fileknight\Service\Access\Exception\FolderAccessDeniedException;
 use Fileknight\Service\File\DirectoryService;
-use Fileknight\Service\File\Exception\FolderNotFoundException;
 use Fileknight\Service\File\FileService;
 use Fileknight\Service\Resolver\Request\RequestResolverService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -59,13 +57,17 @@ class BinController extends AbstractController
         /** @var FileDTO[] $files */
         $files = [];
         foreach ($fileRepository->findAll() as $file) {
-            $files[] = FileDTO::fromEntity($file);
+            if ($file->getDeletedAt() !== null) {
+                $files[] = FileDTO::fromEntity($file);
+            }
         }
 
         /** @var DirectoryDTO[] $directories */
         $directories = [];
         foreach ($directoryRepository->findAll() as $directory) {
-            $directories[] = DirectoryDTO::fromEntity($directory);
+            if ($directory->getDeletedAt() !== null) {
+                $directories[] = DirectoryDTO::fromEntity($directory);
+            }
         }
 
         $content = new DirectoryContentDTO('bin', 'bin', $files, $directories);
@@ -159,7 +161,7 @@ class BinController extends AbstractController
             }
         }
 
-        return ApiResponse::success([], 'Files restored successfully');
+        return ApiResponse::success([], 'Files permanently deleted');
     }
 
     /**
