@@ -21,8 +21,14 @@ export default function DetailsSidebar({ selectedFile, onClose }: { selectedFile
         <div className="flex flex-col gap-2 mt-4">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Type</span>
-            <span>{("size" in selectedFile) ? "File" : "Folder"}</span>
+            <span>{("size" in selectedFile) ? selectedFile.mimeType : "Folder"}</span>
           </div>
+          {("size" in selectedFile) &&
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Extension</span>
+              <span>{("size" in selectedFile) ? selectedFile.extension : "Folder"}</span>
+            </div>
+          }
           <div className="flex justify-between">
             <span className="text-muted-foreground">Size</span>
             <span>{("size" in selectedFile) ? formatBytes(selectedFile.size) : "-"}</span>

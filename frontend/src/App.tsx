@@ -12,6 +12,7 @@ import { ThemeToggle } from "./components/theme-toggle";
 import { ProtectedRoute, RedirectAuthenticatedRoute } from "./components/ProtectedRoute";
 import Main from "./components/layout/main";
 import Files from "./pages/Files";
+import Bin from "./pages/Bin";
 
 function App() {
   return (
@@ -25,7 +26,7 @@ function App() {
           <Route element={<Main />}>
             <Route path="/home" element={<Home/>} />
             <Route path="/f/:folderId?" element={<Files/>} />
-            <Route path="/profile" element={<div>Profile</div>} />
+            <Route path="/bin" element={<Bin/>} />
           </Route>
         </Route>
         {/* If the user is already authenticated, they will be redirected to /

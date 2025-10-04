@@ -11,9 +11,11 @@ readonly class FileDTO implements JsonSerializable
         public string $id,
         public string $name,
         public int    $size,
+        public string $mimeType,
         public string $extension,
         public int    $createdAt,
-        public int    $updatedAt
+        public int    $updatedAt,
+        public ?int    $deletedAt,
     )
     {
     }
@@ -24,9 +26,11 @@ readonly class FileDTO implements JsonSerializable
             $file->getId(),
             $file->getName(),
             $file->getSize(),
+            $file->getMimeType(),
             $file->getExtension(),
             $file->getCreatedAt()->getTimestamp(),
-            $file->getUpdatedAt()->getTimestamp()
+            $file->getUpdatedAt()->getTimestamp(),
+            $file->getDeletedAt()?->getTimestamp(),
         );
     }
 
@@ -41,9 +45,11 @@ readonly class FileDTO implements JsonSerializable
             'id' => $this->id,
             'name' => $this->name,
             'size' => $this->size,
+            'mimeType' => $this->mimeType ?? "",
             'extension' => $this->extension,
             'createdAt' => $this->createdAt,
-            'updatedAt' => $this->updatedAt
+            'updatedAt' => $this->updatedAt,
+            'deletedAt' => $this->deletedAt,
         ];
     }
 }

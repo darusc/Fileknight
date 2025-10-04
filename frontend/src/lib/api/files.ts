@@ -166,4 +166,110 @@ export class Files {
       }
     });
   }
+
+  /**
+   * Get folder metadata
+   * 
+   * ```
+   * GET /api/files/folders/{id}
+   * ```
+   */
+  public async getMetadata(folderId: string) {
+    return this.core.get<{ ancestors: [] }>(`/api/files/folders/${folderId}`, {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    })
+  }
+
+  /**
+   * Get all binned items
+   * 
+   * ```
+   * GET /api/bin
+   * ```
+   */
+  public async listBin() {
+    return await this.core.get<FolderContent>("/api/bin", {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Move file to bin
+   * 
+   * ```
+   * DELETE /api/files/{id}
+   * ```
+   */
+  public async moveFileToBin(id: string) {
+    return await this.core.delete<void>(`/api/files/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Move folder to bin
+   * 
+   * ```
+   * DELETE /api/files/folders/{id}
+   * ```
+   */
+  public async moveFolderToBin(id: string) {
+    return await this.core.delete<void>(`/api/files/folders/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Restore files and folders from bin
+   * 
+   * ```
+   * POST /api/bin/restore
+   * {
+   *  fileIds:   (optional) Array of file ids to restore
+   *  folderIds: (optional) Array of folder ids to restore
+   * }
+   * ```
+   */
+  public async restoreFromBin(files: string[], folders: string[]) {
+    await this.core.post<void>('/api/bin/restore', {
+      body: {
+        fileIds: files,
+        folderIds: folders
+      },
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Permanently deletes files and folders from bin
+   * 
+   * ```
+   * POST /api/bin/delete
+   * {
+   *  fileIds:   (optional) Array of file ids to restore
+   *  folderIds: (optional) Array of folder ids to restore
+   * }
+   * ```
+   */
+  public async deleteFromBin(files: string[], folders: string[]) {
+    await this.core.post<void>('/api/bin/delete', {
+      body: {
+        fileIds: files,
+        folderIds: folders
+      },
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
 }

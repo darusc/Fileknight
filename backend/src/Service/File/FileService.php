@@ -2,6 +2,7 @@
 
 namespace Fileknight\Service\File;
 
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Fileknight\DTO\DirectoryContentDTO;
 use Fileknight\DTO\DirectoryDTO;
@@ -55,16 +56,20 @@ readonly class FileService
         $files = [];
         /** @var File $file */
         foreach ($directory->getFiles() as $file) {
-            $files[] = FileDto::fromEntity($file);
+            if($file->getDeletedAt() == null) {
+                $files[] = FileDto::fromEntity($file);
+            }
         }
 
         $directories = [];
         /** @var Directory $dir */
         foreach ($directory->getChildren() as $dir) {
-            $directories[] = DirectoryDto::fromEntity($dir);
+            if($dir->getDeletedAt() == null) {
+                $directories[] = DirectoryDto::fromEntity($dir);
+            }
         }
 
-        return new DirectoryContentDTO($files, $directories);
+        return new DirectoryContentDTO($directory->getId(), $directory->getName(), $files, $directories);
     }
 
     /**
@@ -76,10 +81,12 @@ readonly class FileService
     public function upload(Directory $directory, UploadedFile $uploadedFile): File
     {
         $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $mimeType = $uploadedFile->getMimeType();
 
         $file = new File();
         $file->setName($originalFilename);
         $file->setDirectory($directory);
+        $file->setMimeType($mimeType);
         $file->setExtension($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
         $file->setSize($uploadedFile->getSize());
 
@@ -119,10 +126,34 @@ readonly class FileService
     }
 
     /**
-     * Delete file
+     * Soft delete file. (move to bin)
      */
     public function delete(File $file): void
     {
+        $file->setDeletedAt(DateTimeImmutable::createFromFormat('U', (string)time()));
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Restore file from bin
+     */
+    public function restore(File $file): void
+    {
+        $file->setDeletedAt(null);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Hard delete file. Removes from file system and the database entry
+     */
+    public function hardDelete(File $file, bool $binnedParent = false): void
+    {
+        // Fail if the file was not added to bin before
+        // and it is not a descendent of a binned directory
+        if(!$binnedParent && $file->getDeletedAt() === null) {
+            return;
+        }
+
         $this->filesystem->remove(static::getPhysicalPath($file));
 
         $this->entityManager->remove($file);

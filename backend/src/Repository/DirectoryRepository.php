@@ -6,8 +6,12 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\Persistence\ManagerRegistry;
 use Fileknight\Entity\Directory;
+use Fileknight\Entity\File;
 use Fileknight\Entity\User;
 
+/**
+ * @extends ServiceEntityRepository<Directory>
+ */
 class DirectoryRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -26,5 +30,19 @@ class DirectoryRepository extends ServiceEntityRepository
             ->setParameter('owner', $user)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * @return Directory[]
+     */
+    public function findAllBinned(): array {
+        $query = $this->createQueryBuilder('d')
+            ->select('*')
+            ->where('d.deletedAt IS NOT NULL')
+            ->addOrderBy('d.deletedAt', 'DESC')
+            ->addOrderBy('d.name', 'ASC')
+            ->getQuery();
+
+        return $query->getResult();
     }
 }

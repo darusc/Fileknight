@@ -10,8 +10,8 @@ import {
   Folder as FolderIcon,
 } from "lucide-react";
 
-import { MoreActionsDropdown } from "./dropdown";
 import { Checkbox } from "@/components/ui/checkbox";
+import { MoreActionsDropdown } from "./dropdown";
 
 export type ColumnItemType = File | Folder;
 
@@ -74,16 +74,16 @@ export const columns: ColumnDef<ColumnItemType>[] = [
     },
   },
   {
-    accessorKey: "updatedAt",
-    meta: { sortKey: "updated" },
+    accessorKey: "deletedAt",
+    meta: { sortKey: "deleted" },
     header: () => (
       <Button variant="ghost">
-        Last modified
+        Deleted At
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
-      const timestamp = row.original.updatedAt;
+      const timestamp = row.original.deletedAt;
       return <div>{formatDate(timestamp, "d MMM yyyy HH:ss")}</div>;
     }
   },

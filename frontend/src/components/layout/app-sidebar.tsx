@@ -9,7 +9,8 @@ import {
   Home, 
   LucideFolderPlus, 
   Plus, 
-  Star 
+  Star, 
+  Trash
 } from "lucide-react"
 
 import {
@@ -37,7 +38,7 @@ import {
 const navItems = [
   { name: "Home", path: "/home", icon: Home },
   { name: "My Files", path: "/f/", icon: Folder },
-  { name: "Starred", path: "/", icon: Star },
+  { name: "Bin", path: "/bin", icon: Trash },
 ]
 
 export function AppSidebar() {

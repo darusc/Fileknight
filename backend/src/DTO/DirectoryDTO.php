@@ -12,6 +12,8 @@ readonly class DirectoryDTO implements JsonSerializable
         public string $name,
         public int    $createdAt,
         public int    $updatedAt,
+        public ?int    $deletedAt,
+        public array  $ancestors
     )
     {
     }
@@ -22,7 +24,9 @@ readonly class DirectoryDTO implements JsonSerializable
             $directory->getId(),
             $directory->getName(),
             $directory->getCreatedAt()->getTimestamp(),
-            $directory->getUpdatedAt()->getTimestamp()
+            $directory->getUpdatedAt()->getTimestamp(),
+            $directory->getDeletedAt()?->getTimestamp(),
+            $directory->getAncestors()
         );
     }
 
@@ -38,6 +42,8 @@ readonly class DirectoryDTO implements JsonSerializable
             'name' => $this->name,
             'createdAt' => $this->createdAt,
             'updatedAt' => $this->updatedAt,
+            'ancestors' => $this->ancestors,
+            'deletedAt' => $this->deletedAt,
         ];
     }
 }
