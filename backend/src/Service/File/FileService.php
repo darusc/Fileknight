@@ -75,27 +75,33 @@ readonly class FileService
     /**
      * Upload a file
      * @param Directory $directory The directory where the file should be uploaded to
-     * @param UploadedFile $uploadedFile The file to be uploaded
-     * @return File The uploaded file
+     * @param UploadedFile[] $uploadedFiles The files to be uploaded
+     * @return array Array containing uploaded file metadata built using the FileDTO
      */
-    public function upload(Directory $directory, UploadedFile $uploadedFile): File
+    public function upload(Directory $directory, array $uploadedFiles): array
     {
-        $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
-        $mimeType = $uploadedFile->getMimeType();
+        $files = [];
 
-        $file = new File();
-        $file->setName($originalFilename);
-        $file->setDirectory($directory);
-        $file->setMimeType($mimeType);
-        $file->setExtension($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
-        $file->setSize($uploadedFile->getSize());
+        foreach ($uploadedFiles as $uploadedFile) {
+            $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $mimeType = $uploadedFile->getMimeType();
 
-        $this->entityManager->persist($file);
-        $this->entityManager->flush();
+            $file = new File();
+            $file->setName($originalFilename);
+            $file->setDirectory($directory);
+            $file->setMimeType($mimeType);
+            $file->setExtension($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
+            $file->setSize($uploadedFile->getSize());
 
-        $uploadedFile->move(DirectoryService::getRootDirectoryPathFromDir($directory), $file->getId());
+            $this->entityManager->persist($file);
+            $this->entityManager->flush();
 
-        return $file;
+            $uploadedFile->move(DirectoryService::getRootDirectoryPathFromDir($directory), $file->getId());
+
+            $files[] = FileDTO::fromEntity($file)->toArray();
+        }
+
+        return $files;
     }
 
     /**

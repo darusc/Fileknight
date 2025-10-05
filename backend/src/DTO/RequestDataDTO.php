@@ -8,9 +8,17 @@ class RequestDataDTO
 {
     private array $fields;
 
+    /** @var UploadedFile[] $files  */
+    private array $files;
+
     public function add(string $name, mixed $value): void
     {
         $this->fields[$name] = $value;
+    }
+
+    public function addFile(UploadedFile $file): void
+    {
+        $this->files[] = $file;
     }
 
     /**
@@ -23,6 +31,11 @@ class RequestDataDTO
     public function get(string $name): mixed
     {
         return $this->fields[$name] ?? null;
+    }
+
+    public function getFiles(): array
+    {
+        return $this->files;
     }
 
     public function exists(string $name): bool
