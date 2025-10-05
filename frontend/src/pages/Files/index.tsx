@@ -7,7 +7,7 @@ import { splitBy } from "@/lib/utils"
 import Topbar from "@/components/layout/app-topbar"
 import { Input } from "@/components/ui/input"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { Download, FileUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
+import { Download, FileUp, FolderUp, Plus, Search, Star, Trash, Upload, X } from "lucide-react"
 
 import { DataTable } from "../../components/data-table"
 import { columns, type ColumnItemType } from "./columns"
@@ -142,11 +142,11 @@ export default function FilesPage() {
                       parentId={params.folderId}
                       trigger={
                         <DropdownMenuItem onSelect={e => e.preventDefault()}>
-                          <FileUp /> Upload file
+                          <FileUp /> Upload files
                         </DropdownMenuItem>
                       }
                     />
-                    {/* <UploadDialog
+                    <UploadDialog
                       type="folder"
                       parentId={params.folderId}
                       trigger={
@@ -154,7 +154,7 @@ export default function FilesPage() {
                           <FolderUp /> Upload folder
                         </DropdownMenuItem>
                       }
-                    /> */}
+                    />
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
