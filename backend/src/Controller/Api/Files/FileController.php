@@ -65,9 +65,8 @@ class FileController extends AbstractController
      * ```
      * POST /api/files
      * {
-     *     file:     <file>
+     *     files:     <files>
      *     parentId: (required) The folder in which to upload it. If null upload in root
-     *     name:     (optional) The name to upload the file with. If not specified or null use the original file name
      * }
      * ```
      * @throws ApiException
@@ -76,14 +75,14 @@ class FileController extends AbstractController
     #[Route(path: '', name: 'api.files.upload', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $data = $this->requestResolverService->resolve($request, ['parentId'], ['name'], ['file']);
+        $data = $this->requestResolverService->resolve($request, ['parentId'], [], true);
 
         $directory = $this->directoryResolverService->resolve($data->get('parentId'));
         AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
 
-        $file = $this->fileService->upload($directory, $data->get('file'));
+        $uploaded = $this->fileService->upload($directory, $data->getFiles());
 
-        return ApiResponse::success(FileDTO::fromEntity($file)->toArray(), 'File uploaded successfully.');
+        return ApiResponse::success($uploaded, 'Files uploaded successfully.');
     }
 
     /**
