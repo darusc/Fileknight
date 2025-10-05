@@ -27,7 +27,7 @@ export class FileService {
 
   public uploadFiles(files: File[], parentId?: string) {
     const formData = new FormData();
-    files.forEach(file => formData.append("file", file));
+    files.forEach(file => formData.append("files[]", file));
     formData.append("parentId", parentId ?? "null");
 
     return this.files.upload(formData);

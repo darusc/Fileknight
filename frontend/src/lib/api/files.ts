@@ -35,9 +35,8 @@ export class Files {
    * ```
    * POST /api/files
    * {
-   *  file:     <file>
+   *  files:     <files>
    *  parentId: (required) Id of the parent folder. If null, the file will be uploaded to the root directory.
-   *  name:     (optional) Optional new name for the file.
    * }
    * ```
    */
