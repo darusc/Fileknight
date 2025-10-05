@@ -22,15 +22,15 @@ class RequestResolverService
      * @param Request $request
      * @param array $required The required fields. Missing or empty fields will throw IncompleteRequestException
      * @param array $optional The optional fields. Not throwing exception if it doesn't exist
-     * @param array $files The required files. If missing throw IncompleteRequestException
+     * @param bool $files If true and files are missing throw IncompleteRequestException
      * @return RequestDataDTO
      *
      * @throws IncompleteRequestException
-     * @throws InvalidJsonException
      * @throws InvalidFileException
+     * @throws InvalidJsonException
      * @throws UnsupportedContentTypeException
      */
-    public function resolve(Request $request, array $required, array $optional = [], array $files = []): RequestDataDTO
+    public function resolve(Request $request, array $required, array $optional = [], bool $files = false): RequestDataDTO
     {
         $data = $this->getDataFromRequest($request);
         $requestData = new RequestDataDTO();
@@ -45,24 +45,23 @@ class RequestResolverService
             }
         }
 
-        // Check files (always required)
-        $missingFiles = [];
-        foreach ($files as $key) {
-            /** @var UploadedFile|null $uploadedFile */
-            $file = $request->files->get($key);
+        /** @var UploadedFile[] $uploadedFiles */
+        $uploadedFiles = [];
+        if ($files) {
+            $uploadedFiles = $request->files->get('files', []);
+            /** @var UploadedFile $uploadedFile */
+            foreach ($uploadedFiles as $uploadedFile) {
+                if (!$uploadedFile->isValid()) {
+                    throw new InvalidFileException($uploadedFile);
+                }
 
-            if ($file === null) {
-                $missingFiles[] = $key;
-            } elseif (!$file->isValid()) {
-                throw new InvalidFileException($file);
-            } else {
-                $requestData->add($key, $file);
+                $requestData->addFile($uploadedFile);
             }
         }
 
         // Throw if any required field/file is missing
-        if (count($missingFields) > 0 || count($missingFiles) > 0) {
-            throw new IncompleteRequestException($missingFields, $missingFiles);
+        if (count($missingFields) > 0 || ($files && count($uploadedFiles) == 0)) {
+            throw new IncompleteRequestException($missingFields, ['files']);
         }
 
         // Add optional fields (default to null if not present)
