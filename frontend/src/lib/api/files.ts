@@ -40,8 +40,27 @@ export class Files {
    * }
    * ```
    */
-  public async upload(formData: FormData): Promise<ApiFile> {
+  public async uploadFile(formData: FormData): Promise<ApiFile> {
     return await this.core.post<ApiFile>("/api/files", {
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${this.core.getJwtToken()}`
+      }
+    });
+  }
+
+  /**
+   * Upload a folder. 
+   * ```
+   * POST /api/files/folders
+   * {
+   *  files:    <files>
+   *  parentId: (required) Folder's parent. If null create in root
+   * }
+   * ```
+   */
+  public async uploadFolder(formData: FormData): Promise<ApiFile> {
+    return await this.core.post<ApiFile>("/api/files/folders", {
       body: formData,
       headers: {
         'Authorization': `Bearer ${this.core.getJwtToken()}`

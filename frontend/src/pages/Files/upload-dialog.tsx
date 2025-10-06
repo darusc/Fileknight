@@ -44,18 +44,19 @@ export default function UploadDialog({
   }
 
   const handleUpload = () => {
-    if (type == "folder" && files.length > 0) {
+    if (files.length > 0) {
       const tid = toast("Uploading files...", {
         description: "Please wait while your files are uploaded.",
         duration: Infinity,
         icon: <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
       });
 
-      fileService.uploadFiles(files, parentId)
-        .then(() => toast("Files uploaded", { icon: <Check /> }))
+      fileService.upload(files, parentId, type === "folder")
+        .then(() => toast("Upload completed", { icon: <Check /> }))
         .catch(() => toast("Upload failed. Please try again"))
         .finally(() => toast.dismiss(tid));
     }
+
     setFiles([]);
     setOpen(false);
   }
