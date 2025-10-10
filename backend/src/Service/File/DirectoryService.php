@@ -4,6 +4,7 @@ namespace Fileknight\Service\File;
 
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Fileknight\DTO\FileDTO;
 use Fileknight\Entity\Directory;
 use Fileknight\Entity\File;
 use Fileknight\Entity\User;
@@ -11,6 +12,7 @@ use Fileknight\Repository\DirectoryRepository;
 use Fileknight\Service\File\Exception\FolderNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 readonly class DirectoryService
@@ -183,6 +185,88 @@ readonly class DirectoryService
 
         $this->entityManager->remove($directory);
         $this->entityManager->flush();
+    }
+
+    /**
+     * Upload a directory
+     *
+     * @param Directory $directory Parent directory where the upload is done
+     * @param UploadedFile[] $files Array containing all files in the specified folder (flattened strucutre)
+     */
+    public function upload(Directory $directory, array $files): void
+    {
+        // The new directory that is being uploaded
+        $uploadDirectory = new Directory();
+        $uploadDirectory->setParent($directory);
+        // Get the uploaded folder's name from the path of one of the uploaded file
+        $uploadDirectory->setName(explode('/', dirname($files[0]->getClientOriginalPath()))[0]);
+        $this->entityManager->persist($uploadDirectory);
+
+        foreach ($files as $uploadedFile) {
+            $relativePath = $uploadedFile->getClientOriginalPath();
+            $path = dirname($relativePath);
+
+            // Find or create (if doesn't exist) the directory where
+            // the current file should be uploaded
+            $dir = $this->findOrCreateDirectory($path, $uploadDirectory);
+
+            $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $mimeType = $uploadedFile->getMimeType();
+
+            $file = new File();
+            $file->setName($originalFilename);
+            $file->setDirectory($dir);
+            $file->setMimeType($mimeType);
+            $file->setExtension($uploadedFile->guessExtension() ?? $uploadedFile->getClientOriginalExtension());
+            $file->setSize($uploadedFile->getSize());
+
+            $this->entityManager->persist($file);
+            $this->entityManager->flush();
+
+            $uploadedFile->move(DirectoryService::getRootDirectoryPathFromDir($directory), $file->getId());
+
+//            $files[] = FileDTO::fromEntity($file)->toArray();
+        }
+    }
+
+    /**
+     * Build a directory tree from the given path. Creates each individual
+     * directory and creates the corresponding hierarchy
+     */
+    private function findOrCreateDirectory(string $path, Directory $root): Directory
+    {
+        // Split the path into directory names
+        $directories = explode('/', $path);
+        if (count($directories) == 1) {
+            return $root;
+        }
+
+        $prev = $root;
+        // Find the directory where the file needs to be uploaded
+        // by looking in the directory tree based on the file's path
+        for($i = 1; $i < count($directories); $i++) {
+            // Check if the current directory exists in root
+            $found = false;
+            foreach ($prev->getChildren() as $child) {
+                if($child->getPath() === $directories[$i]) {
+                    // Go down 1 level inside that directory and continue the search
+                    $prev = $child;
+                    $found = true;
+                    break;
+                }
+            }
+
+            if(!$found) {
+                // Create a new directory and continue inside it
+                $new  = new Directory();
+                $new->setParent($prev);
+                $new->setName($directories[$i]);
+                $this->entityManager->persist($new);
+                $prev = $new;
+            }
+        }
+
+        return $prev;
     }
 
     private function rootDirectoryExists(UserInterface $user): bool

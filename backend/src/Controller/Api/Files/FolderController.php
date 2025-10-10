@@ -53,7 +53,7 @@ class FolderController extends AbstractController
      * Creates a new folder.
      *
      * ```
-     * POST /api/files/folders
+     * POST /api/files/folders/create
      * {
      *      name:     (required) Folder's name
      *      parentId: (required) Folder's parent. If null create in root
@@ -62,7 +62,7 @@ class FolderController extends AbstractController
      * @throws ApiException
      * @throws NonUniqueResultException
      */
-    #[Route(path: '', name: 'api.files.folders', methods: ['POST'])]
+    #[Route(path: '/create', name: 'api.files.folders.create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $data = $this->requestResolverService->resolve($request, ['name', 'parentId']);
@@ -76,6 +76,32 @@ class FolderController extends AbstractController
             DirectoryDTO::fromEntity($created)->toArray(),
             'Directory created successfully.',
         );
+    }
+
+    /**
+     * Upload a folder
+     *
+     * ```
+     * POST /api/files/folders
+     * {
+     *      files:    <files>    A flat list containing the folder's descendent files
+     *      parentId: (required) Folder's parent. If null create in root
+     * }
+     * ```
+     * @throws ApiException
+     * @throws NonUniqueResultException
+     */
+    #[Route(path: '', name: 'api.files.folders', methods: ['POST'])]
+    public function upload(Request $request): JsonResponse
+    {
+        $data = $this->requestResolverService->resolve($request, ['parentId'], [], true);
+
+        $directory = $this->directoryResolverService->resolve($data->get('parentId'));
+        AccessGuardService::assertDirectoryAccess($directory, $this->getUserEntity());
+
+        $this->folderService->upload($directory, $data->getFiles());
+
+        return ApiResponse::success([], 'Folder uploaded successfully.');
     }
 
     /**
