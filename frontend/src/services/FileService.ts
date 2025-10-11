@@ -25,12 +25,16 @@ export class FileService {
     }
   }
 
-  public uploadFiles(files: File[], parentId?: string) {
+  public upload(files: File[], parentId?: string, folderUpload: boolean = false) {
     const formData = new FormData();
     files.forEach(file => formData.append("files[]", file));
     formData.append("parentId", parentId ?? "null");
 
-    return this.files.upload(formData);
+    if(!folderUpload) {
+      return this.files.uploadFile(formData);
+    } else {
+      return this.files.uploadFolder(formData);
+    }
   }
 
   public async download(files: string[], folders: string[]) {

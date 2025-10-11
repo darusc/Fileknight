@@ -51,11 +51,12 @@ export default function UploadDialog({
         icon: <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
       });
 
-      fileService.uploadFiles(files, parentId)
-        .then(() => toast("Files uploaded", { icon: <Check /> }))
+      fileService.upload(files, parentId, type === "folder")
+        .then(() => toast("Upload completed", { icon: <Check /> }))
         .catch(() => toast("Upload failed. Please try again"))
         .finally(() => toast.dismiss(tid));
     }
+
     setFiles([]);
     setOpen(false);
   }
@@ -78,17 +79,28 @@ export default function UploadDialog({
         >
           <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            Click to upload files or drag and drop
+            Click to upload {type === "file" ? "files" : "folder"} or drag and drop
           </p>
-          <input
-            type="file"
-            multiple
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            onChange={handleChange}
-          />
+          {type === "file" ?
+            <input
+              type="file"
+              multiple
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={handleChange}
+            />
+            :
+            <input
+              type="file"
+              //@ts-ignore
+              webkitdirectory="true"
+              directory
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={handleChange}
+            />
+          }
         </div>
 
-        {files.length > 0 && (
+        {files.length > 0 && type === "file" && (
           <div className="mt-4">
             <p className="text-sm font-medium mb-2">Files ready to upload:</p>
             <div className="rounded-md border px-2">
@@ -98,6 +110,18 @@ export default function UploadDialog({
                   <Button variant="ghost"><X /></Button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {files.length > 0 && type === "folder" && (
+          <div className="mt-4">
+            <p className="text-sm font-medium mb-2">Files ready to upload:</p>
+            <div className="rounded-md border px-2">
+              <div className="border-b py-2 flex justify-between items-center">
+                <span>{files[0]?.webkitRelativePath.split("/")[0]}</span>
+                <Button variant="ghost"><X /></Button>
+              </div>
             </div>
           </div>
         )}
